@@ -31,7 +31,7 @@ void storeFileWords(char* filename, Words *words){
         words[i].string = currentString;
     }
     fclose(file);
-    return;
+		return;
 }
 
 int main(){
