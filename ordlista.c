@@ -24,14 +24,34 @@ void storeFileWords(char* filename, Words *words){
     words[0].size = arraySize;
 
     //Allocate memory for string length and save in array
-    char *currentString = (char*)malloc(40*sizeof(char));
+    char *currentString = (char*)malloc(100*sizeof(char)); //Temp memory
     for (int i = 1; fscanf(file, "%s\n", currentString) != EOF; i++){
         words[i].size = strlen(currentString);
-        words[i].string = (char*)malloc(words[i].size * sizeof(char*));
+        words[i].string = (char*)realloc(currentString, words[i].size * sizeof(char*));
         words[i].string = currentString;
     }
     fclose(file);
-		return;
+    return;
+}
+
+void addWord(char* word, int position){
+
+}
+
+//Find word and return word position
+int findWord(char* word){
+    int position;
+    /*
+    ...Code
+    */
+    return position;
+}
+
+//Move word down 1 position
+void moveDownWords(int firstWordPos, int amountOfWords, int newPos){
+    /*
+    ...memcpy the words?
+    */
 }
 
 int main(){
