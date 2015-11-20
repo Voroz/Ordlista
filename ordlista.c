@@ -8,7 +8,7 @@ const int maxWordLength = 100;
 typedef struct{
     char* string;
     int size;
-}Words;
+}Words
 
 Words* storeFileWords(char* filename){
     //Read from file
