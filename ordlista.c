@@ -29,16 +29,19 @@ Words* storeFileWords(char* filename){
 	words[0].size = arraySize;
 
 	//Allocate memory for string length and save in array
-	words[1].string = (char*)malloc(maxWordLength*sizeof(char*)); //Temp memory
+	words[1].string = (char*)malloc(maxWordLength * sizeof(char)); //Temp memory
 	for (int i = 1; fscanf(file, "%s\n", words[i].string) != EOF; i++){
 		words[i].size = strlen(words[i].string);
 		//Reallocate memory to match word size
-		words[i].string = (char*)realloc(words[i].string, words[i].size * sizeof(char*));
+		printf("%d\n", strlen(words[i].string));
+		words[i].string = (char*)realloc(words[i].string, words[i].size * sizeof(char*));          // Behövs?, Varför char*?
+		printf("%d\n", strlen(words[i].string));
 		//Allocate room for next word (unless we are at last word)
 		if (i < arraySize - 1){
-			words[i + 1].string = (char*)malloc(maxWordLength * sizeof(char*)); //Temp memory
+			words[i + 1].string = (char*)malloc(maxWordLength * sizeof(char)); //Temp memory
 		}
 	}
+
 	fclose(file);
 	return words;
 }
