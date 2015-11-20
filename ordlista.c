@@ -60,7 +60,7 @@ int findWord(char* word, Words *words){
 void moveDownWords(int firstWordPos, int amountOfWords, int distance, Words **words){
     words[0]->size += distance;
     *words = (Words*)realloc(*words, (words[0]->size)*sizeof(Words));
-    memmove(*words+firstWordPos, *words+firstWordPos+distance, amountOfWords);
+    memmove(*words+firstWordPos+distance, *words+firstWordPos, amountOfWords);
 }
 
 int main(){
