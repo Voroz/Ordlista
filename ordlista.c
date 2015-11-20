@@ -27,14 +27,14 @@ Words* storeFileWords(char* filename){
     words[0].size = arraySize;
 
     //Allocate memory for string length and save in array
-    words[1].string = (char*)malloc(maxWordLength*sizeof(char));
+    words[1].string = (char*)malloc(maxWordLength*sizeof(char)); //Temp memory
     for (int i = 1; fscanf(file, "%s\n", words[i].string) != EOF; i++){
         words[i].size = strlen(words[i].string);
         //Reallocate memory to match word size
         words[i].string = (char*)realloc(words[i].string, words[i].size * sizeof(char*));
         //Allocate room for next word (unless we are at last word)
         if (i < arraySize-1){
-            words[i+1].string = (char*)malloc(maxWordLength * sizeof(char*));
+            words[i+1].string = (char*)malloc(maxWordLength * sizeof(char*)); //Temp memory
         }
     }
     fclose(file);
@@ -56,11 +56,11 @@ int findWord(char* word, Words *words){
     return 0;
 }
 
-//Move word down 1 position
-void moveDownWords(int firstWordPos, int amountOfWords, int newPos){
-    /*
-    ...memcpy the words?
-    */
+//Move words down 1 position
+void moveDownWords(int firstWordPos, int amountOfWords, int distance, Words **words){
+    words[0]->size += distance;
+    *words = (Words*)realloc(*words, (words[0]->size)*sizeof(Words));
+    memmove(*words+firstWordPos, *words+firstWordPos+distance, amountOfWords);
 }
 
 int main(){
@@ -69,6 +69,10 @@ Words *words;
 
 words = storeFileWords("ordlista.txt");
 printf("%d\n", findWord("Allrum", words));
+moveDownWords(2, 1, 1, &words);
+for (int i = 1; i < words[0].size; i++){
+    printf("%s\n", words[i].string);
+}
 
 
 return 0;
