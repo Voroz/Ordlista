@@ -74,7 +74,7 @@ Words* moveDownWords(int firstWordPos, int amountOfWords, int distance, Words *w
 
         //Allocate memory for the strings inside our new Words
         //(The empty space that might happen after moving words down far enough).
-		for (int i = originalSize; i < words[0].size - 1; i++){
+		for (int i = originalSize; i < words[0].size; i++){
 			words[i].string = (char*)malloc(maxWordLength*sizeof(char));
 		}
 	}
