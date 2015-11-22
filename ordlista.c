@@ -1,3 +1,6 @@
+/*Vi måste lösa problemet att vi måste returnera Word* från funktioner
+när vi redan har skickat in samma Word* i parameterlistan*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -45,31 +48,31 @@ Words* storeFileWords(char* filename){
 	return words;
 }
 
-void addWord(char* word, int position){
-
+/*Will find the proper placement for the word we give the function based on the alphabet
+  Will be used inside the addWord function(Not yet done!!).*/
+void findPlaceForWord(char* word){
+    int position;
+    return position;
 }
 
-//Find word and return word position
-int findWord(char* word, Words *words){
-	for (int i = 1; i < words[0].size; i++){
-		//Check if strings match with memcmp
-		if (memcmp(word, words[i].string, words[i].size) == 0){
-			return i; // i = position
-		}
-	}
-	return 0;
-}
-
-
+//Using this in add word function
 Words* moveDownWords(int firstWordPos, int amountOfWords, int distance, Words *words){
-	int sizeDifference = firstWordPos + amountOfWords + distance - words[0].size,
-		originalSize = words[0].size;
+    int lastWordPos = firstWordPos + amountOfWords-1,
+        newSize = lastWordPos + distance+1,
+		originalSize = words[0].size,
+		sizeDifference = newSize - words[0].size;
+
+    //Exit function if input doesn't make sense
+    if (lastWordPos >= originalSize || firstWordPos <= 0 || amountOfWords <= 0){
+        printf("Error! You are trying to move memory that you don't own!");
+        return words;
+    }
 
     //Allocate just enough memory to be able to move down words to the right place.
 	if (sizeDifference > 0){
-		words[0].size += sizeDifference;
+		words[0].size = newSize;
 
-		//Allocate Words memory
+		//Reallocate Words memory
 		words = (Words*)realloc(words, (words[0].size)*sizeof(Words));
 
         //Allocate memory for the strings inside our new Words
@@ -82,15 +85,84 @@ Words* moveDownWords(int firstWordPos, int amountOfWords, int distance, Words *w
 	return words;
 }
 
+//Using this in delete word function
+Words* moveUpWords(int firstWordPos, int amountOfWords, int distance, Words *words){
+    int lastWordPos = firstWordPos + amountOfWords-1,
+        newSize = lastWordPos - distance+1,
+		originalSize = words[0].size,
+		sizeDifferance = words[0].size - newSize;
+
+    //Exit function if input doesn't make sense
+    if (lastWordPos >= originalSize || firstWordPos <= 0){
+        printf("Error! You are trying to move memory that you don't own!");
+        return words;
+    }
+
+    memmove(words + firstWordPos - distance, words + firstWordPos, amountOfWords*sizeof(Words));
+
+    //Free memory only if we are moving the last word in the array
+    if (lastWordPos == words[0].size - 1){
+        words[0].size = newSize;
+
+        //Reallocate Words memory
+		words = (Words*)realloc(words, (words[0].size)*sizeof(Words));
+    }
+    return words;
+}
+
+void addWord(char* word, int position){
+
+}
+
+//Find word and return word position
+int findWord(char* word, Words *words){
+	for (int i = 1; i < words[0].size; i++){
+		//Check if strings match with memcmp
+		if (memcmp(word, words[i].string, words[i].size) == 0){
+			return i; // i = position
+		}
+	}
+	return NULL;
+}
+
+Words* deleteWord(char* word, Words *words){
+    int position = findWord(word, words),
+        distance = 1,
+        firstWordPos = position+1,
+        amountOfWords = words[0].size - firstWordPos,
+        lastWordPos = firstWordPos + amountOfWords-1,
+        newSize = lastWordPos - distance+1;
+
+    if (position == NULL){
+        printf("Error! Word doesn't exist!\n");
+        return words;
+    }
+
+    //If the word is the last word, realloc but don't try to move memory.
+    if (amountOfWords <= 0){
+        words[0].size = newSize;
+
+        //Reallocate Words memory
+		words = (Words*)realloc(words, (words[0].size)*sizeof(Words));
+		return words;
+    }
+
+    //Move up words below the word to be deleted
+    words = moveUpWords(firstWordPos, amountOfWords, distance, words);
+    return words;
+}
+
 
 int main(){
 
 Words *words;
 
 words = storeFileWords("ordlista.txt");
-printf("%d\n", findWord("Allrum", words));
 
-words = moveDownWords(2, 2, 3, words);
+words = deleteWord("Akrobat", words);
+words = deleteWord("Abstinens", words);
+words = deleteWord("Betalmedel", words);
+words = deleteWord("Betalmedel", words);
 
 for (int i = 1; i < words[0].size; i++){
     printf("%s\n", words[i].string);
