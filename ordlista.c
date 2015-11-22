@@ -31,7 +31,7 @@ Words* storeFileWords(char* filename){
 	words[0].size = arraySize;
 
 	//Allocate memory for string length and save in array
-	words[1].string = (char*)malloc(maxWordLength * sizeof(char));  //Temp memory
+	words[1].string = (char*)malloc(MAXWORDLENGTH * sizeof(char));  //Temp memory
 	for (int i = 1; fscanf(file, "%s\n", words[i].string) != EOF; i++){
 
         //Reallocate memory to match word size
@@ -40,7 +40,7 @@ Words* storeFileWords(char* filename){
 
 		//Allocate room for next word (unless we are at last word)
 		if (i < arraySize - 1){
-			words[i + 1].string = (char*)malloc(maxWordLength * sizeof(char)); //Temp memory
+			words[i + 1].string = (char*)malloc(MAXWORDLENGTH * sizeof(char)); //Temp memory
 		}
 	}
 
@@ -78,7 +78,7 @@ Words* moveDownWords(int firstWordPos, int amountOfWords, int distance, Words *w
         //Allocate memory for the strings inside our new Words
         //(The empty space that might happen after moving words down far enough).
 		for (int i = originalSize; i < words[0].size; i++){
-			words[i].string = (char*)malloc(maxWordLength*sizeof(char));
+			words[i].string = (char*)malloc(MAXWORDLENGTH*sizeof(char));
 		}
 	}
 	memmove(words + firstWordPos + distance, words + firstWordPos, amountOfWords*sizeof(Words));
@@ -126,7 +126,7 @@ int findWord(char* word, Words *words){
 }
 
 Words* deleteWord(int position, Words *words){
-        int distance = 1,
+    int distance = 1,
         firstWordPos = position+1,
         amountOfWords = words[0].size - firstWordPos,
         lastWordPos = firstWordPos + amountOfWords-1,
