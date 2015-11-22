@@ -6,7 +6,7 @@ när vi redan har skickat in samma Word* i parameterlistan*/
 #include <math.h>
 #include <string.h>
 
-const int maxWordLength = 100;
+const int MAXWORDLENGTH = 100;
 
 typedef struct{
 	char* string;
@@ -125,9 +125,8 @@ int findWord(char* word, Words *words){
 	return NULL;
 }
 
-Words* deleteWord(char* word, Words *words){
-    int position = findWord(word, words),
-        distance = 1,
+Words* deleteWord(int position, Words *words){
+        int distance = 1,
         firstWordPos = position+1,
         amountOfWords = words[0].size - firstWordPos,
         lastWordPos = firstWordPos + amountOfWords-1,
@@ -159,10 +158,10 @@ Words *words;
 
 words = storeFileWords("ordlista.txt");
 
-words = deleteWord("Akrobat", words);
-words = deleteWord("Abstinens", words);
-words = deleteWord("Betalmedel", words);
-words = deleteWord("Betalmedel", words);
+words = deleteWord(findWord("Akrobat", words), words);
+words = deleteWord(findWord("Abstinens", words), words);
+words = deleteWord(findWord("Betalmedel", words), words);
+words = deleteWord(findWord("Betalmedel", words), words);
 
 for (int i = 1; i < words[0].size; i++){
     printf("%s\n", words[i].string);
