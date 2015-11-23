@@ -53,7 +53,7 @@ void findPlaceForWord(char* word){
 }
 
 //Using this in add word function
-void moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **words){
+int moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **words){
     int lastWordPos = firstWordPos + amountOfWords-1,
         newSize = lastWordPos + distance+1,
 		originalSize = words[0]->size,
@@ -62,7 +62,7 @@ void moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **wor
     //Exit function if input doesn't make sense
     if (lastWordPos >= originalSize || firstWordPos <= 0 || amountOfWords <= 0){
         printf("Error! You are trying to move memory that you don't own!");
-        return;
+        return NULL;
     }
 
     //Allocate just enough memory to be able to move down words to the right place.
@@ -79,20 +79,20 @@ void moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **wor
 		}
 	}
 	memmove(*words + firstWordPos + distance, *words + firstWordPos, amountOfWords*sizeof(Word));
-	return;
+	return 1;
 }
 
 //Using this in delete word function
-void moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words){
+int moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words){
     int lastWordPos = firstWordPos + amountOfWords-1,
         newSize = lastWordPos - distance+1,
 		originalSize = words[0]->size,
 		sizeDifferance = words[0]->size - newSize;
 
     //Exit function if input doesn't make sense
-    if (lastWordPos >= originalSize || firstWordPos <= 0){
-        printf("Error! You are trying to move memory that you don't own!");
-        return;
+    if (lastWordPos >= originalSize || firstWordPos <= 0 || amountOfWords <= 0){
+        printf("Error! You are trying to move memory that you don't own!\n");
+        return NULL;
     }
 
     memmove(*words + firstWordPos - distance, *words + firstWordPos, amountOfWords*sizeof(Word));
@@ -104,10 +104,10 @@ void moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words
         //Reallocate Words memory
 		*words = realloc(*words, (words[0]->size)*sizeof(Word));
     }
-    return;
+    return 1;
 }
 
-void addWord(char* word, int position){
+void addWord(char* word, int position, Word **words){
 
 }
 
@@ -122,7 +122,7 @@ int findWord(char* word, Word *words){
 	return NULL;
 }
 
-void deleteWord(int position, Word **words){
+int deleteWord(int position, Word **words){
     int distance = 1,
         firstWordPos = position+1,
         amountOfWords = words[0]->size - firstWordPos,
@@ -131,7 +131,7 @@ void deleteWord(int position, Word **words){
 
     if (position == NULL){
         printf("Error! Word doesn't exist!\n");
-        return;
+        return NULL;
     }
 
     //If the word is the last word, realloc but don't try to move memory.
@@ -140,12 +140,12 @@ void deleteWord(int position, Word **words){
 
         //Reallocate Words memory
 		*words = realloc(*words, (words[0]->size)*sizeof(Word));
-		return;
+		return 1;
     }
 
     //Move up words below the word to be deleted
     moveUpWords(firstWordPos, amountOfWords, distance, &(*words));
-    return;
+    return 1;
 }
 
 
@@ -157,7 +157,6 @@ words = storeFileWords("ordlista.txt");
 
 deleteWord(findWord("Akrobat", words), &words);
 deleteWord(findWord("Abstinens", words), &words);
-deleteWord(findWord("Betalmedel", words), &words);
 deleteWord(findWord("Betalmedel", words), &words);
 
 for (int i = 1; i < words[0].size; i++){
