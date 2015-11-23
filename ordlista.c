@@ -56,8 +56,8 @@ void findPlaceForWord(char* word){
 int moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **words){
     int lastWordPos = firstWordPos + amountOfWords-1,
         newSize = lastWordPos + distance+1,
-		originalSize = words[0]->size,
-		sizeDifference = newSize - words[0]->size;
+		originalSize = (*words)[0].size,
+		sizeDifference = newSize - (*words)[0].size;
 
     //Exit function if input doesn't make sense
     if (lastWordPos >= originalSize || firstWordPos <= 0 || amountOfWords <= 0){
@@ -67,15 +67,15 @@ int moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **word
 
     //Allocate just enough memory to be able to move down words to the right place.
 	if (sizeDifference > 0){
-		words[0]->size = newSize;
+		(*words)[0].size = newSize;
 
 		//Reallocate Words memory
-		*words = realloc(*words, (words[0]->size)*sizeof(Word));
+		*words = realloc(*words, ((*words)[0].size)*sizeof(Word));
 
         //Allocate memory for the strings inside our new Words
         //(The empty space that might happen after moving words down far enough).
-		for (int i = originalSize; i < words[0]->size; i++){
-			(*words)[i].string = malloc(MAXWORDLENGTH*sizeof(char));    //Här kan vi inte använda ->. Varför? (Order of precedence)
+		for (int i = originalSize; i < (*words)[0].size; i++){
+			(*words)[i].string = malloc(MAXWORDLENGTH*sizeof(char));
 		}
 	}
 	memmove(*words + firstWordPos + distance, *words + firstWordPos, amountOfWords*sizeof(Word));
@@ -86,8 +86,8 @@ int moveDownWords(int firstWordPos, int amountOfWords, int distance, Word **word
 int moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words){
     int lastWordPos = firstWordPos + amountOfWords-1,
         newSize = lastWordPos - distance+1,
-		originalSize = words[0]->size,
-		sizeDifferance = words[0]->size - newSize;
+		originalSize = (*words)[0].size,
+		sizeDifferance = (*words)[0].size - newSize;
 
     //Exit function if input doesn't make sense
     if (lastWordPos >= originalSize || firstWordPos <= 0 || amountOfWords <= 0){
@@ -98,11 +98,11 @@ int moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words)
     memmove(*words + firstWordPos - distance, *words + firstWordPos, amountOfWords*sizeof(Word));
 
     //Free memory only if we are moving the last word in the array
-    if (lastWordPos == words[0]->size - 1){
-        words[0]->size = newSize;
+    if (lastWordPos == (*words)[0].size - 1){
+        (*words)[0].size = newSize;
 
         //Reallocate Words memory
-		*words = realloc(*words, (words[0]->size)*sizeof(Word));
+		*words = realloc(*words, ((*words)[0].size)*sizeof(Word));
     }
     return 1;
 }
@@ -125,7 +125,7 @@ int findWord(char* word, Word *words){
 int deleteWord(int position, Word **words){
     int distance = 1,
         firstWordPos = position+1,
-        amountOfWords = words[0]->size - firstWordPos,
+        amountOfWords = (*words)[0].size - firstWordPos,
         lastWordPos = firstWordPos + amountOfWords-1,
         newSize = lastWordPos - distance+1;
 
@@ -136,10 +136,10 @@ int deleteWord(int position, Word **words){
 
     //If the word is the last word, realloc but don't try to move memory.
     if (amountOfWords <= 0){
-        words[0]->size = newSize;
+        (*words)[0].size = newSize;
 
         //Reallocate Words memory
-		*words = realloc(*words, (words[0]->size)*sizeof(Word));
+		*words = realloc(*words, ((*words)[0].size)*sizeof(Word));
 		return 1;
     }
 
