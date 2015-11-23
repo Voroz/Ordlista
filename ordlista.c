@@ -108,7 +108,35 @@ int moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words)
 }
 
 void addWord(char* word, int position, Word **words){
+    int distance = 1,
+        amountOfWords = (*words)[0].size - position,
+        originalSize = (*words)[0].size;
 
+    //If there is no word in this location, allocate only.
+    if (amountOfWords <= 0){
+        (*words)[0].size = position+1;
+
+        //Reallocate Words memory
+		*words = realloc(*words, ((*words)[0].size)*sizeof(Word));
+
+		//Allocate memory for the strings inside our new Words
+        //(The empty space that might happen after moving words down far enough).
+		for (int i = originalSize; i < (*words)[0].size; i++){
+			(*words)[i].string = malloc(MAXWORDLENGTH*sizeof(char));
+			(*words)[i].string = "";
+			(*words)[i].size = 1;
+		}
+    }
+
+    //Make room for word if the word already has a string
+    if ((*words)[position].string != ""){
+        moveDownWords(position, amountOfWords, distance, &(*words));
+    }
+
+    //Add word
+    (*words)[position].string = word;
+
+    return 1;
 }
 
 //Find word and return word position
@@ -157,7 +185,11 @@ words = storeFileWords("ordlista.txt");
 
 deleteWord(findWord("Akrobat", words), &words);
 deleteWord(findWord("Abstinens", words), &words);
-deleteWord(findWord("Betalmedel", words), &words);
+addWord("test word", 5, &words);
+addWord("test word", 4, &words);
+addWord("test word", 2, &words);
+addWord("test word", 9, &words);
+while (deleteWord(findWord("", words), &words))continue;    //Deletes all blank spaces.
 
 for (int i = 1; i < words[0].size; i++){
     printf("%s\n", words[i].string);
