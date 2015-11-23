@@ -107,11 +107,15 @@ int moveUpWords(int firstWordPos, int amountOfWords, int distance, Word **words)
     return 1;
 }
 
-void addWord(char* word, int position, Word **words){
+int addWord(char* word, int position, Word **words){
     int distance = 1,
         amountOfWords = (*words)[0].size - position,
         originalSize = (*words)[0].size;
 
+    //Check if out of bounds
+    if (position <= 0){
+        return NULL;
+    }
     //If there is no word in this location, allocate only.
     if (amountOfWords <= 0){
         (*words)[0].size = position+1;
@@ -157,7 +161,8 @@ int deleteWord(int position, Word **words){
         lastWordPos = firstWordPos + amountOfWords-1,
         newSize = lastWordPos - distance+1;
 
-    if (position == NULL){
+    //Check if out of bounds
+    if (position <= 0 || position >= (*words)[0].size-1){
         printf("Error! Word doesn't exist!\n");
         return NULL;
     }
