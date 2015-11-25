@@ -114,14 +114,18 @@ void storeWordsFromFile(String filename, Vector *pVector) {
 	FILE *file;
 	String word;
 
-	if (!(file = fopen(filename, "r")))	// Open file
+	// Open file
+	if (!(file = fopen(filename, "r")))
 	{
 		printf("Error opening %s\n", filename);
 		return;
 	}
 
-	word = malloc(MAX_WORD_LENGTH);	// Temporary memory
-	for (int i = 0; fscanf(file, "%s\n", word) != EOF; i++)	// Read word into temporary memory
+	// Temporary memory
+	word = malloc(MAX_WORD_LENGTH);	
+
+	// Read word into temporary memory
+	for (int i = 0; fscanf(file, "%s\n", word) != EOF; i++)
 	{
 		vectorAppend(pVector, word);
 	}
@@ -133,7 +137,7 @@ void storeWordsFromFile(String filename, Vector *pVector) {
 
 //Find word and return word position
 int findPosForWord(String word, Vector *pVector) {
-	for (int i = 1; i < pVector->size; i++){
+	for (int i = 0; i < pVector->size; i++){
 		//Check if strings match with memcmp
 		if (memcmp(word, pVector->data[i].word, pVector->data[i].length) == 0){
 			return i; // i = position
@@ -142,7 +146,7 @@ int findPosForWord(String word, Vector *pVector) {
 	return -1;
 }
 
-int* searchForWord(String searchTerm, Vector *pVector) {
+int* searchForWords(String searchTerm, Vector *pVector) {
 
 	int *pCompareVector = (int)calloc(pVector->size, sizeof(int));
 	
@@ -247,31 +251,28 @@ int readCommand(String value) {
 
 void readInput(String command, String value) {
 	printf("\n\n%c", '>');
-	String input,
+	String userInput,
 		commandInput,
 		valueInput;
 
-	input = GetLine();
-	int x = (FindChar(' ', input, 0));
-	if (x == -1)
+	userInput = GetLine();
+	int spaceChar = (FindChar(' ', userInput, 0));
+	if (spaceChar == -1)
 	{
-		commandInput = SubString(input, 0, StringLength(input));
+		commandInput = SubString(userInput, 0, StringLength(userInput));
 		valueInput = -1;
 	}
 	else
 	{
-		commandInput = SubString(input, 0, (x - 1));
-		valueInput = SubString(input, (x + 1), StringLength(input));
-		memcpy(value, valueInput, StringLength(input));
+		commandInput = SubString(userInput, 0, (spaceChar - 1));
+		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
+		memcpy(value, valueInput, StringLength(userInput));
 		FreeBlock(valueInput);
 	}
 
-	memcpy(command, commandInput, StringLength(input)+1);
+	memcpy(command, commandInput, StringLength(userInput) + 1);
 
 	FreeBlock(commandInput);
-
-	//memcpy(command, readInput, StringLength(value));
-	//scanf("%s %s", command, value);
 }
 
 
@@ -281,12 +282,12 @@ int switchCommand(String command, String value, Vector *pVector) {
 		printf("\n%s\n", addWord(value, 10, pVector));
 		return 1;
 		break;
-
 	case (2) :
 	{
-		int number = (int)StringToReal(value);
-
-		if (number) {
+		// Transform value to int, returns -1 if it failed
+		int number = StringToInteger(value);
+		// If number is a real number 
+		if (number > -1) {
 			printf("\n%s\n", deleteWord(number, pVector));
 			return 1;
 		}
@@ -294,10 +295,9 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 		break;
 	}
-
 	case (3) :
 	{
-		int *pCompareVector = searchForWord(value, pVector);
+		int *pCompareVector = searchForWords(value, pVector);
 		for (int i = 0; i < pVector->size; i++) {
 			if (pCompareVector[i] > 0) {
 				printToScreen(pVector->data[i], i);
@@ -307,7 +307,6 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 		break;
 	}
-
 	case (4) :
 	{
 		for (int i = 0; i < pVector->size; i++) {
@@ -317,7 +316,6 @@ int switchCommand(String command, String value, Vector *pVector) {
 		break;
 				 
 	}
-
 	case (5) :
 		return 0;
 		break;
