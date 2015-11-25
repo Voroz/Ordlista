@@ -205,7 +205,8 @@ int StringToInteger(String s)
         Error("NULL String passed to StringToInteger");
     }
     if (sscanf(s, " %d %c", &result, &dummy) != 1) {
-        Error("StringToInteger called on illegal number %s", s);
+		return -1; // Own addition
+        //Error("StringToInteger called on illegal number %s", s);
     }
     return (result);
 }
