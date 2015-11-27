@@ -79,14 +79,16 @@ void vectorAppend(Vector *pVector, void **value, int sizeOfElem) {
 	pVector->size++;
 }
 
-void vectorSet(Vector *pVector, int index, void **value) {
+void vectorSet(Vector *pVector, int index, void **value, int sizeOfElem) {
 
 	if (index >= pVector->size || index < 0) {
 		printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		//exit(1);
 	}
 	// Set the value at the desired index
-	pVector->data[index] = value;
+	void* ptr = malloc(sizeOfElem);
+	memmove(ptr, value, sizeOfElem);
+	pVector->data[index] = ptr;
 }
 
 void *vectorGet(Vector *pVector, int index) {
@@ -221,7 +223,34 @@ void printToScreen(String word, int position)
 	printf("\n%d\t%s", position, word);
 }
 
+int editWord(int index, Vector *pVector)
+{
+	Vector *wordToEdit = vectorGet(pVector, index);
 
+	String word;
+	printf("The word you are about to edit: %s.\n", *(wordToEdit->data));
+	printf("\tDO IT,JUST DO IT!\nDont let your dreams be dreams, edit %s now: ",*(wordToEdit->data)); //for the lol's. 
+	scanf("%s", word);
+
+	vectorSet(wordToEdit, 0, word, sizeof(strlen(word) + 1));
+	vectorSet(wordToEdit, index, wordToEdit, sizeof(Vector));
+
+	FreeBlock(word);
+
+	
+
+	/*String word = GetBlock(MAX_WORD_LENGTH);
+
+	Vector *hfhfh = vectorGet(&container, findPosForWord(value, &container));
+	scanf("%s", &word);
+
+	vectorSet(hfhfh, 0, word, (sizeof(strlen(word) + 1)));
+
+	vectorSet(pVector, index, hfhfh, sizeof(Vector));
+
+	FreeBlock(word);
+	*/
+}
 
 //###########################################################//
 //typedef enum {
