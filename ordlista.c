@@ -230,6 +230,11 @@ void printToScreen(String word, int position)
 
 void editWord(int index, Vector *pVector)
 {
+    //Check if out of bounds
+	if (index < 0 || index >= pVector->size){
+		printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		return -1;
+	}
     String word = malloc(MAX_WORD_LENGTH);
     scanf("%s", word);
 	vectorSet(pVector, index, word);
@@ -335,7 +340,7 @@ int switchCommand(String command, String value, Vector *pVector) {
         // Transform value to int, returns -1 if it failed
         int number = StringToInteger(value);
         // If number is a real number
-        if (number > -1) {
+        if (number != -1) {
             deleteWord(number, pVector);
             return 1;
         }
@@ -344,9 +349,18 @@ int switchCommand(String command, String value, Vector *pVector) {
         break;
 	}
 	case (edit) :
+    {
+	    // Transform value to int, returns -1 if it failed
+        int number = StringToInteger(value);
+        // If number is a real number
+        if (number != -1) {
+            editWord(number, pVector);
+            return 1;
+        }
 		editWord(findPosForWord(value, pVector), pVector);
 		return 1;
 		break;
+    }
 	case (find) :
 	{
         Vector pCompareVector = searchForWords(value, pVector);
