@@ -57,15 +57,14 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector) {
 #ifdef DEBUG_ON
 	printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
 #endif
+    if (pVector->capacity / pVector->size >= 2) {
 
-	if (pVector->capacity / pVector->size >= 2) {
-
-		void **newMemory = realloc(pVector->data, sizeof(void*) * (pVector->capacity / 2));
-		if (newMemory) {
-			pVector->data = newMemory;
-			pVector->capacity /= 2;
-		}
-	}
+        void **newMemory = realloc(pVector->data, sizeof(void*) * (pVector->capacity / 2));
+        if (newMemory) {
+            pVector->data = newMemory;
+            pVector->capacity /= 2;
+        }
+    }
 }
 
 void vectorAppend(Vector *pVector, void **value, int sizeOfElem) {
@@ -100,21 +99,22 @@ void *vectorGet(Vector *pVector, int index) {
 //
 // Moves all values by one starting at index and inserts new value at index
 //
-void vectorInsert(Vector *pVector, int index, void **value) {
+void vectorInsert(Vector *pVector, int index, void **value, int sizeOfElem) {
     //Make room for the word
     vectorAppend(pVector, pVector->data[pVector->size-1], strlen(pVector->data[pVector->size-1])+1);
     //Move down all words below index
 	for (int i = pVector->size-1; i > index; i--) {
 		vectorSet(pVector, i, pVector->data[i - 1]);
 	}
-
+    void* ptr = malloc(sizeOfElem);
+	memmove(ptr, value, sizeOfElem);
     //Now insert the word
-	vectorSet(pVector, index, value);
+	vectorSet(pVector, index, ptr);
 }
 
 void vectorRemove(Vector *pVector, int index) {
 
-	for (int i = index; i < (pVector->size); i++) {
+	for (int i = index; i < (pVector->size-1); i++) {
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
 	vectorSet(pVector, (pVector->size-1), NULL);
@@ -170,8 +170,7 @@ int* searchForWords(String searchTerm, Vector *pVector) {
 	int *pCompareVector = calloc(pVector->size, sizeof(int));
 
 	for (int i = 0; i < pVector->size; i++) {
-		Vector *word = pVector->data[i];
-		if (strstr(word->data, searchTerm) != NULL) {
+		if (strstr(pVector->data[i], searchTerm) != NULL) {
 			pCompareVector[i]++;
 		}
 	}
@@ -213,7 +212,7 @@ int addWord(String word, int index, Vector *pVector) {
 	}
 
 	//If we're inserting word
-	vectorInsert(pVector, index, word);
+	vectorInsert(pVector, index, word, strlen(word)+1);
 	printf("Ordet las till\n");
 	return 1;
 }
@@ -339,7 +338,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 		break;
 
 	default:
-		printf("Error: Command doesn't exist. Try again.");
+		printf("Unrecognized command \"%s\"", command);
 		return -1;
 		break;
 	}
