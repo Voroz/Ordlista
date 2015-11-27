@@ -255,6 +255,23 @@ int editWord(int index, Vector *pVector)
 	*/
 }
 
+int printHelpInfo(){
+	printf("*******************************************************\n");
+	printf("Here are the commands to navigate though our program.\n\n\n");
+	printf("To add a word, type: add\tExample: add Giraff\n");
+	printf("\t\t\t\t\t >Ordet lades till.\n\n");
+	printf("To edit a word, type: edit\tExample: edit Giraff\n");
+	printf("\t\t\t\t\t >'edit the word'\n\n");
+	printf("To delete a word, type: delete\tExample: delete Giraff\n");
+	printf("\t\t\t\t\t >Ordet togs bort.\n\n");
+	printf("To find a word, type: find\t Exempel: find Giraff\n");
+	printf("\t\t\t\t\t >Ordet hittades.\n");
+	printf("To print the entire list, type: print\n\n");
+	printf("To exit the program, type: exit\n\n");
+	printf("*******************************************************\n");
+
+}
+
 //###########################################################//
 typedef enum {
 	help = 1,
@@ -322,7 +339,7 @@ void readInput(String command, String value) {
 int switchCommand(String command, String value, Vector *pVector) {
 	switch (readCommand(command)) {
 	case (help) :
-		//printHelpInfo();
+		printHelpInfo();
 		break;
 	case (add) :
 		addWord(value, 10, pVector);
