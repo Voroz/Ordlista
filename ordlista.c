@@ -24,6 +24,10 @@ typedef struct{
 
 
 //###########################################################//
+int vectorSize(Vector *pVector){
+	return pVector->size;
+}
+
 void vectorInit(Vector *pVector) {
 	// Initialize size and capacity
 	pVector->size = 0;
@@ -79,7 +83,6 @@ void vectorAppend(Vector *pVector, void **value, int sizeOfElem) {
 }
 
 void vectorSet(Vector *pVector, int index, void **value) {
-
 	if (index >= pVector->size || index < 0) {
 		printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		//exit(1);
@@ -106,9 +109,9 @@ void vectorInsert(Vector *pVector, int index, void **value, int sizeOfElem) {
 	for (int i = pVector->size-1; i > index; i--) {
 		vectorSet(pVector, i, pVector->data[i - 1]);
 	}
+    //Now insert the word
     void* ptr = malloc(sizeOfElem);
 	memmove(ptr, value, sizeOfElem);
-    //Now insert the word
 	vectorSet(pVector, index, ptr);
 }
 
@@ -154,6 +157,8 @@ int compareWords(String wordA, String wordB) {
 	return memcmp(wordA, wordB, strlen(wordA));
 }
 
+
+
 //Find word and return word position
 int findPosForWord(String word, Vector *pVector) {
 	for (int i = 0; i < pVector->size; i++){
@@ -165,13 +170,14 @@ int findPosForWord(String word, Vector *pVector) {
 	return -1;
 }
 
-int* searchForWords(String searchTerm, Vector *pVector) {
+Vector searchForWords(String searchTerm, Vector *pVector) {
 
-	int *pCompareVector = calloc(pVector->size, sizeof(int));
+	Vector pCompareVector;
+	vectorInit(&pCompareVector);
 
 	for (int i = 0; i < pVector->size; i++) {
 		if (strstr(pVector->data[i], searchTerm) != NULL) {
-			pCompareVector[i]++;
+			vectorAppend(&pCompareVector, &i, strlen(pVector->data[i])+1);
 		}
 	}
 	return pCompareVector;
@@ -222,44 +228,72 @@ void printToScreen(String word, int position)
 	printf("\n%d\t%s", position, word);
 }
 
+void editWord(int index, Vector *pVector)
+{
+    String word = malloc(MAX_WORD_LENGTH);
+    scanf("%s", word);
+	vectorSet(pVector, index, word);
+}
+
+// Behaves wierdly after its done printing every value in vector
+void printWordsInVector(Vector *pVector, int startIndex, int endIndex) {
+    int index = startIndex;
+	if (index < vectorSize(pVector) && index <= endIndex)
+	{
+		printf("\n%d\t%s", startIndex, pVector->data[index]);
+		printWordsInVector(pVector, ++index, endIndex);
+	}
+}
+
+int printHelpInfo(){
+	printf("*******************************************************\n");
+	printf("Here are the commands to navigate though our program.\n\n\n");
+	printf("To add a word, type:\t\tadd\tex: \"add Giraff\"\n");
+	printf("To edit a word, type:\t\tedit\tex: \"edit Giraff\"\n");
+	printf("To delete a word, type:\t\tdelete\tex: \"delete Giraff\"\n");
+	printf("To find a word, type:\t\tfind\tex: \"find Giraff\"\n");
+	printf("To print the full list, type:\tprint\n");
+	printf("To exit the program, type:\texit\n\n");
+	printf("*******************************************************\n");
+    return 1;
+}
+
+//###########################################################//
+typedef enum {
+	help = 1,
+	add,
+	edit,
+	delete,
+	find,
+	print,
+	exitProg
+};
 
 int readCommand(String value) {
-	if (*value == 104)
-	{
-		if (StringEqual("help", ConvertToLowerCase(value))) {
-			return 1;
-		}
+	if (*value == 'h' && StringEqual("help", ConvertToLowerCase(value))) {
+		return help;
 	}
-	if (*value == 97)
-	{
-		if (StringEqual("add", ConvertToLowerCase(value))) {
-			return 2;
-		}
+	if (*value == 'a' && StringEqual("add", ConvertToLowerCase(value))) {
+		return add;
 	}
-	if (*value == 100)
-	{
-		if (StringEqual("delete", ConvertToLowerCase(value))) {
-			return 3;
-		}
+	if (*value == 'd' && StringEqual("delete", ConvertToLowerCase(value))) {
+		return delete;
 	}
-	if (*value == 102)
-	{
-		if (StringEqual("find", ConvertToLowerCase(value))) {
-			return 4;
-		}
+	if (*value == 'f' && StringEqual("find", ConvertToLowerCase(value))) {
+		return find;
 	}
-	if (*value == 112)
-	{
-		if (StringEqual("print", ConvertToLowerCase(value))) {
-			return 5;
-		}
+	if (*value == 'p' && StringEqual("print", ConvertToLowerCase(value))) {
+		return print;
 	}
-	if (*value == 101)
-	{
+	if (*value == 'e') {
+		if (StringEqual("edit", ConvertToLowerCase(value))) {
+			return edit;
+		}
 		if (StringEqual("exit", ConvertToLowerCase(value))) {
-			return 6;
+			return exitProg;
 		}
 	}
+
 	return 0;
 }
 
@@ -270,75 +304,72 @@ void readInput(String command, String value) {
 		valueInput;
 
 	userInput = GetLine();
+
 	int spaceChar = (FindChar(' ', userInput, 0));
-	if (spaceChar == -1)
-	{
+	if (spaceChar == -1) {
 		commandInput = SubString(userInput, 0, StringLength(userInput));
 		valueInput = "\0";
 	}
-	else
-	{
+	else {
 		commandInput = SubString(userInput, 0, (spaceChar - 1));
 		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
 		memcpy(value, valueInput, StringLength(userInput));
 		FreeBlock(valueInput);
 	}
-
 	memcpy(command, commandInput, StringLength(userInput) + 1);
-
 	FreeBlock(commandInput);
 }
 
 
 int switchCommand(String command, String value, Vector *pVector) {
 	switch (readCommand(command)) {
-	case (1) :
-		//printHelpInfo();
+	case (help) :
+		printHelpInfo();
 		break;
-	case (2) :
+	case (add) :
 		addWord(value, 2, pVector);
 		return 1;
 		break;
-	case (3) :
+	case (delete) :
 	{
-		// Transform value to int, returns -1 if it failed
-		int number = StringToInteger(value);
-		// If number is a real number
-		if (number > -1) {
-			deleteWord(number, pVector);
-			return 1;
-		}
-		deleteWord(findPosForWord(value, pVector), pVector);
-		return 1;
-		break;
+        // Transform value to int, returns -1 if it failed
+        int number = StringToInteger(value);
+        // If number is a real number
+        if (number > -1) {
+            deleteWord(number, pVector);
+            return 1;
+        }
+        deleteWord(findPosForWord(value, pVector), pVector);
+        return 1;
+        break;
 	}
-	case (4) :
-	{
-		int *pCompareVector = searchForWords(value, pVector);
-		for (int i = 0; i < pVector->size; i++) {
-			if (pCompareVector[i] > 0) {
-				printToScreen(pVector->data[i], i);
-			}
-		}
-		free(pCompareVector);
+	case (edit) :
+		editWord(findPosForWord(value, pVector), pVector);
 		return 1;
 		break;
+	case (find) :
+	{
+        Vector pCompareVector = searchForWords(value, pVector);
+        if (pCompareVector.size > 0) {
+            printWordsInVector(&pCompareVector, 0, (pCompareVector.size-1));
+        }
+        free(&pCompareVector);
+        return 1;
+        break;
 	}
-	case (5) :
+	case (print) :
 	{
-		for (int i = 0; i < pVector->size; i++) {
-			printToScreen(pVector->data[i], i);
-		}
-		return 1;
-		break;
+        printWordsInVector(pVector, 0, pVector->size-1);
+        return 1;
+        break;
 
 	}
-	case (6) :
+	case (exitProg) :
 		return 0;
 		break;
 
 	default:
-		printf("Unrecognized command \"%s\"", command);
+		printf("Error: Command doesn't exist. Try again.");
 		return -1;
 		break;
 	}
