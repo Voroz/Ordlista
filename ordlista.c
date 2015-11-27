@@ -33,7 +33,7 @@ void vectorInit(Vector *pVector) {
 	pVector->data = GetBlock(sizeof(void*)* pVector->capacity);
 }
 
-int vectorTotal(Vector *pVector)
+int vectorSize(Vector *pVector)
 {
 	return pVector->size;
 }
@@ -116,8 +116,8 @@ void vectorRemove(Vector *pVector, int index) {
 	for (int i = index; i < (pVector->size - 1); i++) {
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
+	vectorSet(pVector, (pVector->size-1), NULL);
 	pVector->size--;
-	vectorSet(pVector, (pVector->size - 1), NULL);
 
 	vectorHalfCapacityIfNotUsed(pVector);
 }
@@ -161,7 +161,7 @@ int compareWords(String wordA, String wordB) {
 
 //Find word and return word position
 int findPosForWord(String word, Vector *pVector) {
-	for (int i = 0; i < pVector->size; i++){
+	for (int i = 0; i < vectorSize(pVector); i++){
 		//Check if strings match with memcmp
 		Vector *compare = vectorGet(pVector, i);
 		if (memcmp(word, vectorGet(compare, 0), strlen(word)) == 0){
@@ -175,9 +175,9 @@ int* searchForWords(String searchTerm, Vector *pVector) {
 
 	int *pCompareVector = calloc(pVector->size, sizeof(int));
 
-	for (int i = 0; i < pVector->size; i++) {
-		Vector *word = pVector->data[i];
-		if (strstr(word->data, searchTerm) != NULL) {
+	for (int i = 0; i < vectorSize(pVector); i++) {
+		Vector *word = vectorGet(pVector, i);
+		if (strstr(vectorGet(word, 0), searchTerm) != NULL) {
 			pCompareVector[i]++;
 		}
 	}
@@ -206,7 +206,7 @@ void deleteManyWords(int index, int numWords, Vector *pVector) {
 
 int addWord(String word, int index, Vector *pVector) {
 	//Check if out of bounds
-	if (index < 0 || index >= pVector->size) {
+	if (index < 0 || index >= vectorSize(pVector)) {
 		printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		return -1;
 	}
@@ -216,11 +216,12 @@ int addWord(String word, int index, Vector *pVector) {
 	return 1;
 }
 
+// Behaves wierdly after its done printing every value in vector
 void printWordsInVector(Vector *pVector, int startIndex, int endIndex) {
-	if (startIndex < pVector->size)
+	if (startIndex < vectorSize(pVector) && startIndex < endIndex)
 	{
 		Vector *word = vectorGet(pVector, startIndex);
-		printf("\n%d\t%s", startIndex, *(word->data));
+		printf("\n%d\t%s", startIndex, vectorGet(word, 0));
 		printWordsInVector(pVector, ++startIndex, endIndex);
 	}
 }
@@ -235,7 +236,7 @@ int editWord(int index, Vector *pVector)
 	scanf("%s", word);
 
 	vectorSet(wordToEdit, 0, word, sizeof(strlen(word) + 1));
-	vectorSet(wordToEdit, index, wordToEdit, sizeof(Vector));
+	vectorSet(pVector, index, wordToEdit, sizeof(Vector));
 
 	FreeBlock(word);
 
@@ -341,7 +342,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 					  break;
 	}
 	case (edit) :
-		//editWord(findPosForWord(value, pVector), pVector);
+		editWord(findPosForWord(value, pVector), pVector);
 		return 1;
 		break;
 	case (find) :
@@ -349,8 +350,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 					int *pCompareVector = searchForWords(value, pVector);
 					for (int i = 0; i < pVector->size; i++) {
 						if (pCompareVector[i] > 0) {
-							Vector *word = pVector->data[i];
-							//printToScreen(*(word->data), i);
+							printWordsInVector(pVector, i, (i + 1));
 						}
 					}
 					free(pCompareVector);
@@ -386,9 +386,9 @@ int main()
 
 
 	storeWordsFromFile("Ordlista.txt", &container);
-	Vector *test = (container.data[5]);
+	/*Vector *test = (container.data[5]);
 	int x = findPosForWord(*(test->data), &container);
-	int y = findPosForWord("Butan", &container);
+	int y = findPosForWord("Butan", &container);*/
 
 	//vectorSet(&vector, 25, "-hej-");
 	//vectorSet(&vector, 89, "Coca-Cola");
@@ -401,9 +401,9 @@ int main()
 	vector_add(&a, asd);
 	vector_add(&v, &a);*/
 
-	for (int i = 0; i < vectorTotal(&container); i++) {
-		Vector *test = (container.data[i]);
-		printf("%s \n", *(test->data));
+	for (int i = 0; i < vectorSize(&container); i++) {
+		Vector *test = vectorGet(&container, i);
+		printf("%s \n", vectorGet(test, 0));
 	}
 
 
