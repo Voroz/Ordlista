@@ -81,8 +81,10 @@ void vectorAppend(Vector *pVector, void **value, int sizeOfElem){
 
 void vectorSet(Vector *pVector, int index, void **value){
 	if (index >= pVector->size || index < 0){
-		printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		//exit(1);
+        #ifdef DEBUG_ON
+            printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
+		return -1;
 	}
 	// Set the value at the desired index
 	pVector->data[index] = value;
@@ -90,8 +92,10 @@ void vectorSet(Vector *pVector, int index, void **value){
 
 void *vectorGet(Vector *pVector, int index){
 	if (index >= pVector->size || index < 0){
-		printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		//exit(1);
+        #ifdef DEBUG_ON
+            printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
+		return -1;
 	}
 	return pVector->data[index];
 }
@@ -100,6 +104,14 @@ void *vectorGet(Vector *pVector, int index){
 // Moves all values one step higer from index position and inserts the new value at index
 //
 void vectorInsert(Vector *pVector, int index, void **value, int sizeOfElem){
+    // Check if out of bounds
+	if (index < 0 || index >= vectorSize(pVector)){
+        #ifdef DEBUG_ON
+            printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
+		return -1;
+	}
+
 	// Make the vector one element larger to make room for the new value
 	vectorAppend(pVector, pVector->data[pVector->size - 1], strlen(pVector->data[pVector->size - 1]) + 1);
 
@@ -115,6 +127,14 @@ void vectorInsert(Vector *pVector, int index, void **value, int sizeOfElem){
 }
 
 void vectorRemove(Vector *pVector, int index){
+    // Check if out of bounds
+	if (index < 0 || index >= vectorSize(pVector)){
+        #ifdef DEBUG_ON
+            printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
+		return -1;
+	}
+
 	for (int i = index; i < (pVector->size - 1); i++){
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
@@ -183,9 +203,12 @@ Vector searchForWords(String searchTerm, Vector *pVector){
 int deleteWord(int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-		printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #ifdef DEBUG_ON
+            printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
 		return -1;
 	}
+
 	vectorRemove(pVector, index);
 	printf("Ordet togs bort\n");
 	return 1;
@@ -201,7 +224,9 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 int addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index > vectorSize(pVector)){
-		printf("Index %d is out of bounds for vector of size %d\n", index, vectorSize(pVector));
+        #ifdef DEBUG_ON
+            printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
 		return -1;
 	}
 
@@ -220,9 +245,11 @@ int addWord(String word, int index, Vector *pVector){
 
 int editWord(int index, Vector *pVector){
 	String wordToEdit = vectorGet(pVector, index);
-	//Check if out of bounds
-	if (index < 0 || index >= pVector->size){
-		printf("Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+	// Check if out of bounds
+	if (index < 0 || index >= vectorSize(pVector)){
+        #ifdef DEBUG_ON
+            printf("editWord: Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
 		return -1;
 	}
 	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
@@ -236,12 +263,19 @@ void printToScreen(String word, int position){
 	printf("\n%d\t%s", position, word);
 }
 
-// Behaves wierdly after its done printing every value in vector
 void printWordsInVector(Vector *pVector, int startIndex, int endIndex){
-	if (startIndex < vectorSize(pVector) && startIndex <= endIndex){
-		printf("\n%d\t%s", vectorGet(pVector, startIndex));
-		printWordsInVector(pVector, ++startIndex, endIndex);
+    // Check if out of bounds
+	if (startIndex < 0 || startIndex >= vectorSize(pVector) ||
+        endIndex >= vectorSize(pVector) || startIndex > endIndex){
+        #ifdef DEBUG_ON
+            printf("editWord: Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+        #endif
+		return -1;
 	}
+
+    for (int i = startIndex; i <= endIndex; i++){
+        printf("\n%d\t%s", i, vectorGet(pVector, i));
+    }
 }
 
 int printHelpInfo(){
@@ -331,7 +365,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 	{
 		// Transform value to int, returns -1 if it failed
 		int number = StringToInteger(value);
-		// If number is a real number 
+		// If number is a real number
 		if (number > -1){
 			deleteWord(number, pVector);
 			return 1;
