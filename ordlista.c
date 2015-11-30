@@ -169,8 +169,8 @@ void storeWordsFromFile(String filename, Vector *pVector){
 	String word;
 
 	// Open file and check for errors
-	if (!(file = fopen("Ordlista.txt", "r"))){
-		printf("Error opening %s\n", "Ordlista.txt");
+	if (!(file = fopen(filename, "r"))){
+		printf("Error opening %s\n", filename);
 		return;
 	}
 	// Temporary memory
@@ -182,6 +182,8 @@ void storeWordsFromFile(String filename, Vector *pVector){
 	free(word);
 	fclose(file);
 }
+
+//TODO: Save our words in a file function
 
 // TODO: Use strcmp() to find postion of word and use vectorInsert()
 int findPosForWord(String wordA, String wordB){
@@ -307,6 +309,7 @@ int printHelpInfo(){
 }
 
 //###########################################################//
+//TODO: Add Save and Load enum
 typedef enum {
 	help = 1,
 	add,
@@ -317,6 +320,7 @@ typedef enum {
 	exitProg
 };
 
+//TODO: Add Save and Load command
 int readCommand(String value){
 	if (*value == 'h' && StringEqual("help", ConvertToLowerCase(value))){
 		return help;
@@ -368,6 +372,7 @@ void readInput(String command, String value){
 	FreeBlock(commandInput);
 }
 
+//TODO: Add Save and Load command
 int switchCommand(String command, String value, Vector *pVector) {
 	switch (readCommand(command)){
 	case (help) :
