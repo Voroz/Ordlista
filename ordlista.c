@@ -69,6 +69,7 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	}
 }
 
+// TODO: Refactor void* ptr and memcpy() line to a new static function.
 void vectorAppend(Vector *pVector, void **value, int sizeOfElem){
 	// Make sure there's room to expand into
 	vectorDoubleCapacityIfFull(pVector);
@@ -100,6 +101,7 @@ void *vectorGet(Vector *pVector, int index){
 	return pVector->data[index];
 }
 
+// TODO: Refactor void* ptr and memcpy() line to a new static function.
 //
 // Moves all values one step higer from index position and inserts the new value at index
 //
@@ -144,6 +146,7 @@ void vectorRemove(Vector *pVector, int index){
 	vectorHalfCapacityIfNotUsed(pVector);
 }
 
+// TODO: Free pVector->data also.
 void vectorFree(Vector *pVector){
 	for (int i = 0; i < pVector->size; i++){
 		free(pVector->data[i]);
@@ -151,6 +154,16 @@ void vectorFree(Vector *pVector){
 }
 
 //###########################################################//
+// TODO: Replace å,ä,ö and Å,Ä,Ö with 
+// \x86 = å
+// \x84 = ä
+// \x94 = ö
+
+// \x8F = Å
+// \x8E = Ä
+// \x99 = Ö
+// function(String word);
+
 void storeWordsFromFile(String filename, Vector *pVector){
 	FILE *file;
 	String word;
@@ -170,13 +183,13 @@ void storeWordsFromFile(String filename, Vector *pVector){
 	fclose(file);
 }
 
-// Under heavy progress
-int compareWords(String wordA, String wordB){
+// TODO: Use strcmp() to find postion of word and use vectorInsert()
+int findPosForWord(String wordA, String wordB){
 	return memcmp(wordA, wordB, strlen(wordA));
 }
 
 // Find word and return word position
-int findPosForWord(String word, Vector *pVector){
+int getWordPos(String word, Vector *pVector){
 	for (int i = 0; i < vectorSize(pVector); i++){
 		// Check if strings match with memcmp
 		if (memcmp(word, vectorGet(pVector, i), strlen(word)) == 0){
@@ -187,6 +200,7 @@ int findPosForWord(String word, Vector *pVector){
 	return -1;
 }
 
+//TODO: Change to return Int* dynamic array with positions
 Vector searchForWords(String searchTerm, Vector *pVector){
 
 	Vector pCompareVector;
@@ -221,6 +235,7 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 	}
 }
 
+// TODO: Check if word is an int and disallow user to add word.
 int addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index > vectorSize(pVector)){
@@ -254,7 +269,7 @@ int editWord(int index, Vector *pVector){
 	}
 	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
 	wordToEdit = GetLine();
-	// TODO: Check if wordToEdit is empty string and dont save it and return -1
+	// TODO: Check if wordToEdit is empty string and dont save it and return -2
 	vectorSet(pVector, index, wordToEdit);
 	return 1;
 }
@@ -329,6 +344,7 @@ int readCommand(String value){
 	return 0;
 }
 
+// TODO: switch all input from user to lower case.
 void readInput(String command, String value){
 	printf("\n\n%c", '>');
 	String userInput,
