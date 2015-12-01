@@ -465,7 +465,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 			deleteWord(number, pVector);
 			return 1;
 		}
-		deleteWord(findPosForWord(value, pVector), pVector);
+		deleteWord(getWordPos(value, pVector), pVector);
 		return 1;
 		break;
 	}
