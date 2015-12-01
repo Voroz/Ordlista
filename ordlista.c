@@ -16,11 +16,6 @@
 #define DEBUG_ON
 
 typedef struct{
-	String string;
-	int index;
-} Word;
-
-typedef struct{
 	int size;		// Slots used so far
 	int capacity;	// Total available slots
 	void **data;	// Array of data we're storing
@@ -166,14 +161,14 @@ void vectorClear(Vector *pVector){
 }
 
 //###########################################################//
--// TODO: Replace å,ä,ö and Å,Ä,Ö with
--// \x86 = å
--// \x84 = ä
--// \x94 = ö
--
--// \x8F = Å
--// \x8E = Ä
--// \x99 = Ö
+// TODO: Replace å,ä,ö and Å,Ä,Ö with
+// \x86 = å
+// \x84 = ä
+// \x94 = ö
+
+// \x8F = Å
+// \x8E = Ä
+// \x99 = Ö
 // function(String word);
 
 int storeWordsFromFile(String filename, Vector *pVector){
@@ -401,7 +396,7 @@ typedef enum {
 	exitProg
 };
 
-//TODO: Add Save and Load and clear vector command
+//TODO: Add Save and Load and new vector command
 int readCommand(String value){
 	if (value[0] == 'h' && StringEqual("help", ConvertToLowerCase(value))){
 		return help;
@@ -437,7 +432,7 @@ int readCommand(String value){
 }
 
 // TODO: switch all input from user to lower case.
-void readInput(String command, String value){
+void readInput(String *pCommand, String *pValue){
 	printf("\n\n%c", '>');
 
 	String userInput,
@@ -449,16 +444,26 @@ void readInput(String command, String value){
 	int spaceChar = (FindChar(' ', userInput, 0));
 	if (spaceChar == -1){
 		commandInput = SubString(userInput, 0, StringLength(userInput));
-		*value = '\0';
+
+		*pCommand = commandInput;
+		*pValue = '\0';
+
+		FreeBlock(commandInput);
 	}
 	else {
 		commandInput = SubString(userInput, 0, (spaceChar - 1));
+		*pCommand = commandInput;
+
 		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
-		memcpy(value, valueInput, (StringLength(valueInput) + 1));
+		*pValue = valueInput;
+
+		FreeBlock(commandInput);
 		FreeBlock(valueInput);
+		//memcpy(*pValue, valueInput, (StringLength(valueInput) + 1));
+		
 	}
-	memcpy(command, commandInput, (StringLength(commandInput) + 1));
-	FreeBlock(commandInput);
+	//memcpy(*pCommand, commandInput, (StringLength(commandInput) + 1));
+	//FreeBlock(commandInput);
 }
 
 //TODO: Add Save and Load command
@@ -470,7 +475,6 @@ int switchCommand(String command, String value, Vector *pVector) {
 	case (add) :
 		addWord(value, 2, pVector);
 		return 1;
-		break;
 	case (delete) :
 	{
 		// Transform value to int, returns -1 if it failed
@@ -482,7 +486,6 @@ int switchCommand(String command, String value, Vector *pVector) {
 		}
 		deleteWord(getWordPos(value, pVector), pVector);
 		return 1;
-		break;
 	}
 	case (edit) :
 	{
@@ -495,7 +498,6 @@ int switchCommand(String command, String value, Vector *pVector) {
 		}
 		editWord(findPosForWord(value, pVector), pVector);
 		return 1;
-		break;
 	}
 	case (find) :
 	{
@@ -505,13 +507,11 @@ int switchCommand(String command, String value, Vector *pVector) {
 		}
 		vectorFree(&pCompareVector);
 		return 1;
-		break;
 	}
 	case (print) :
 	{
 		printWordsInVector(pVector, 0, vectorSize(pVector));
 		return 1;
-		break;
 
 	}
 	case (load) :
@@ -519,7 +519,6 @@ int switchCommand(String command, String value, Vector *pVector) {
 		vectorClear(pVector);
 		storeWordsFromFile(value, pVector);
 		return 1;
-		break;
 
 	}
 	case (save) :
@@ -528,17 +527,14 @@ int switchCommand(String command, String value, Vector *pVector) {
 			printf("You have nothing to save idiot! ;)");
 		};
 		return 1;
-		break;
 
 	}
 	case (exitProg) :
 		return 0;
-		break;
 
 	default:
 		printf("Error: Command doesn't exist. Try again.");
 		return -1;
-		break;
 	}
 	return -1;
 }
@@ -547,13 +543,13 @@ int switchCommand(String command, String value, Vector *pVector) {
 //###########################################################//
 int main()
 {
-	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
+	String command, value;
 	Vector container;
 	vectorInit(&container);
 
 	int check = 1;
 	while (check){
-		readInput(command, value);
+		readInput(&command, &value);
 		check = switchCommand(command, value, &container);
 	}
 
