@@ -166,14 +166,14 @@ void vectorClear(Vector *pVector){
 }
 
 //###########################################################//
-// TODO: Replace Ã¥,Ã¤,Ã¶ and Ã…,Ã„,Ã– with
-// \x86 = Ã¥
-// \x84 = Ã¤
-// \x94 = Ã¶
-
-// \x8F = Ã…
-// \x8E = Ã„
-// \x99 = Ã–
+-// TODO: Replace å,ä,ö and Å,Ä,Ö with
+-// \x86 = å
+-// \x84 = ä
+-// \x94 = ö
+-
+-// \x8F = Å
+-// \x8E = Ä
+-// \x99 = Ö
 // function(String word);
 
 int storeWordsFromFile(String filename, Vector *pVector){
