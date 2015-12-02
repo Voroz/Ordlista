@@ -74,7 +74,6 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	}
 }
 
-// TODO: Refactor void* ptr and memcpy() line to a new static function.
 void vectorAppend(Vector *pVector, void *value, int sizeOfElem){
 	// Make sure there's room to expand into
 	vectorDoubleCapacityIfFull(pVector);
@@ -104,7 +103,6 @@ void* vectorGet(Vector *pVector, int index){
 	return pVector->data[index];
 }
 
-// TODO: Refactor void* ptr and memcpy() line to a new static function.
 //
 // Moves all values one step higer from index position and inserts the new value at index
 //
