@@ -1,7 +1,3 @@
-/*Nu har du gått loss i koden ser jag. Inga kommandon funkar längre :).
-Orkar inte kolla på vad du har ändrat exakt, men skriver en kommentar här så
-du vet att det inte var mina senaste ändringar nu som gjorde det.*/
-
 #define _CRT_SECURE_NO_WARNINGS
 
 
@@ -17,7 +13,7 @@ du vet att det inte var mina senaste ändringar nu som gjorde det.*/
 
 #define VECTOR_INITIAL_CAPACITY 10
 #define MAX_WORD_LENGTH 100
-#define DEBUG_ON
+//#define DEBUG_ON
 
 typedef struct{
 	int size;		// Slots used so far
@@ -27,24 +23,33 @@ typedef struct{
 
 
 //###########################################################//
-// TODO: Add free word function and malloc word function
 void vectorInit(Vector *pVector){
 	// Initialize size and capacity
 	pVector->size = 0;
 	pVector->capacity = VECTOR_INITIAL_CAPACITY;
 
 	// Allocate memory for vector->data
-	pVector->data = GetBlock(sizeof(void*) * pVector->capacity);
+	pVector->data = GetBlock(sizeof(void*)* pVector->capacity);
 }
 
 int vectorSize(Vector *pVector){
 	return pVector->size;
 }
 
+static void* vectorCopyValue(void* value, int sizeOfElem){
+	void* ptr = GetBlock(sizeOfElem);
+	memcpy(ptr, value, sizeOfElem);
+	return ptr;
+}
+
+static void vectorFreeValue(void* value){
+	free(value);
+}
+
 static void vectorDoubleCapacityIfFull(Vector *pVector){
 	if (pVector->size >= pVector->capacity){
 
-		void **newMemory = realloc(pVector->data, sizeof(void*) * (pVector->capacity * 2));
+		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity * 2));
 		if (newMemory){
 #ifdef DEBUG_ON
 			printf("Vector resize: %d to %d\n", pVector->size, (pVector->capacity * 2));
@@ -58,7 +63,7 @@ static void vectorDoubleCapacityIfFull(Vector *pVector){
 static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	if (pVector->capacity / pVector->size >= 2){
 
-		void **newMemory = realloc(pVector->data, sizeof(void*) * (pVector->capacity / 2));
+		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity / 2));
 		if (newMemory){
 #ifdef DEBUG_ON
 			printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
@@ -75,9 +80,7 @@ void vectorAppend(Vector *pVector, void *value, int sizeOfElem){
 	vectorDoubleCapacityIfFull(pVector);
 
 	// Append the value and increment vector->size
-	void* ptr = GetBlock(sizeOfElem);
-	memcpy(ptr, value, sizeOfElem);
-	pVector->data[pVector->size++] = ptr;
+	pVector->data[pVector->size++] = vectorCopyValue(value, sizeOfElem);
 }
 
 int vectorSet(Vector *pVector, int index, void *value){
@@ -89,11 +92,10 @@ int vectorSet(Vector *pVector, int index, void *value){
 	}
 	// Set the value at the desired index
 	pVector->data[index] = value;
-
 	return 1;
 }
 
-void *vectorGet(Vector *pVector, int index){
+void* vectorGet(Vector *pVector, int index){
 	if (index >= pVector->size || index < 0){
 #ifdef DEBUG_ON
 		printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
@@ -108,23 +110,21 @@ void *vectorGet(Vector *pVector, int index){
 //
 int vectorInsert(Vector *pVector, int index, void *value, int sizeOfElem){
 	// Check if out of bounds
-	if (index < 0 || index >= vectorSize(pVector)){
+	if (index < 0 || index >= pVector->size){
 #ifdef DEBUG_ON
 		printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 #endif
 		return -1;
 	}
-
 	// Make the vector one element larger to make room for the new value
 	vectorAppend(pVector, pVector->data[pVector->size - 1], strlen(pVector->data[pVector->size - 1]) + 1);
 
-	// Move all values whos index is larger than 'index' one step higher (3 becomes 2, 2 becomes 1, and so on)
+	// Move all values whos index is larger than 'index' one higher (element 5 becomes 4, 4 becomes 3, and so on)
 	for (int i = (pVector->size - 1); i > index; i--){
 		vectorSet(pVector, i, pVector->data[i - 1]);
 	}
 	// Save the value at a new adress
-	void* ptr = GetBlock(sizeOfElem);
-	memcpy(ptr, value, sizeOfElem);
+	void* ptr = vectorCopyValue(value, sizeOfElem);
 	// Save the new adress in the vector
 	vectorSet(pVector, index, ptr);
 
@@ -133,28 +133,27 @@ int vectorInsert(Vector *pVector, int index, void *value, int sizeOfElem){
 
 int vectorRemove(Vector *pVector, int index){
 	// Check if out of bounds
-	if (index < 0 || index >= vectorSize(pVector)){
+	if (index < 0 || index >= pVector->size){
 #ifdef DEBUG_ON
 		printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 #endif
 		return -1;
 	}
-
+	// Move all values whos index is larger than 'index' one lower (element 4 becomes 5, 5 becomes 6, and so on)
 	for (int i = index; i < (pVector->size - 1); i++){
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
-	vectorSet(pVector, (pVector->size - 1), NULL);
-	pVector->size--;
+	// Decrement vector->size and set last value to NULL 
+	vectorSet(pVector, (--pVector->size), NULL);
 
+	// Check usage and halves vector is usage is <= 50%
 	vectorHalfCapacityIfNotUsed(pVector);
-
 	return 1;
 }
 
-// TODO: Free pVector->data also.
 void vectorFree(Vector *pVector){
 	for (int i = 0; i < pVector->size; i++){
-		free(pVector->data[i]);
+		vectorFreeValue(pVector->data[i]);
 	}
 	free(pVector->data);
 }
@@ -175,57 +174,52 @@ void vectorClear(Vector *pVector){
 // \x99 = Ö
 // function(String word);
 
-int storeWordsFromFile(String filename, Vector *pVector){
-	FILE *file;
-	String word;
+void appendFileExtension(String value, String extension){
+	// Get the last charecters of 'value', exactly the amount of charecters in 'extension'
+	String fileEnding = SubString(value, (strlen(value) - strlen(extension)), strlen(value));
 
-	//Add .txt at the end if user didn't add it himself
-	String fileEnding = malloc(5);
-	if (strlen(filename) > 4){ //Make sure we don't access random memory
-		strcpy(fileEnding, filename + strlen(filename) - 4);
+	// If the string 'value' dosen't already end with 'ext' add 'ext'
+	if (strcmp(fileEnding, extension)){
+		String newExt = Concat(".", extension);
+		strcat(value, newExt);
+		FreeBlock(newExt);
 	}
-	if (strcmp(fileEnding, ".txt") != 0){
-		strcat(filename, ".txt");
-	}
+}
+
+FILE *openFile(String filename, String accessMode){
+	FILE *file;
+
+	// Add txt extension to 'filename' if not already there
+	appendFileExtension(filename, "txt");
 
 	// Open file and check for errors
-	if (!(file = fopen(filename, "r"))){
-		printf("Error opening %s\n", filename);
-		return -1;
+	if (!(file = fopen(filename, accessMode))){
+		printf("Error opening %s\n", filename); // TODO: Move error message to scope of call, (switch command)
+		return;
 	}
+	return file;
+}
+
+void closeFile(FILE *file){
+	fclose(file);
+}
+
+int storeWordsFromFile(FILE *file, Vector *pVector){
+	String word;
 
 	// Temporary memory
-	word = malloc(MAX_WORD_LENGTH);
+	word = GetBlock(MAX_WORD_LENGTH);
 	// Read word into temporary memory
 	for (int i = 0; fscanf(file, "%s\n", word) != EOF; i++){
+		// Append word to vector
 		vectorAppend(pVector, word, (strlen(word) + 1));
 	}
-
-	fclose(file);
-	free(fileEnding);
 	free(word);
 
 	return 1;
 }
 
-int saveWordsToFile(String filename, Vector *pVector){
-	FILE *file;
-
-	//Add .txt at the end if user didn't add it himself
-	String fileEnding = malloc(5);
-	if (strlen(filename) > 4){ //Make sure we don't access random memory
-		strcpy(fileEnding, filename + strlen(filename) - 4);
-	}
-	if (strcmp(fileEnding, ".txt") != 0){
-		strcat(filename, ".txt");
-	}
-
-	// Open file and check for errors
-	if (!(file = fopen(filename, "w"))){
-		printf("Error opening %s\n", filename);
-		return -1;
-	}
-
+int saveWordsToFile(FILE *file, Vector *pVector){
 	// Save words to file
 	if (vectorSize(pVector) != 0){
 		for (int i = 0; i < vectorSize(pVector) - 1; i++){
@@ -237,17 +231,10 @@ int saveWordsToFile(String filename, Vector *pVector){
 #ifdef DEBUG_ON
 		printf("'saveWordsToFile' - Vector doesn't contain anything!\n");
 #endif
-		fclose(file);
 		return -1;
 	}
-
-	fclose(file);
-	free(fileEnding);
-
 	return 1;
 }
-
-//TODO: Save our words in a file function
 
 // TODO: Use strcmp() to find postion of word and return position
 int findPosForWord(String wordA, String wordB){
@@ -387,7 +374,6 @@ int printHelpInfo(){
 }
 
 //###########################################################//
-//TODO: Add Save and Load enum
 typedef enum {
 	help = 1,
 	add,
@@ -400,7 +386,6 @@ typedef enum {
 	exitProg
 };
 
-//TODO: Add Save and Load and new vector command
 int readCommand(String value){
 	if (value[0] == 'h' && StringEqual("help", ConvertToLowerCase(value))){
 		return help;
@@ -448,93 +433,92 @@ void readInput(String *pCommand, String *pValue){
 	int spaceChar = (FindChar(' ', userInput, 0));
 	if (spaceChar == -1){
 		commandInput = SubString(userInput, 0, StringLength(userInput));
-
+		free(*pCommand);
 		*pCommand = commandInput;
 		*pValue = '\0';
-
-		FreeBlock(commandInput);
 	}
 	else {
 		commandInput = SubString(userInput, 0, (spaceChar - 1));
+		free(*pCommand);
 		*pCommand = commandInput;
 
 		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
+		free(*pValue);
 		*pValue = valueInput;
-
-		FreeBlock(commandInput);
-		FreeBlock(valueInput);
-		//memcpy(*pValue, valueInput, (StringLength(valueInput) + 1));
-
 	}
-	//memcpy(*pCommand, commandInput, (StringLength(commandInput) + 1));
-	//FreeBlock(commandInput);
+	free(userInput);
 }
 
-//TODO: Add Save and Load command
 int switchCommand(String command, String value, Vector *pVector) {
-    int number;
-    Vector pCompareVector;
+	int number;
+	Vector pCompareVector;
 	switch (readCommand(command)){
-        case (help) :
-            printHelpInfo();
-            return 1;
+	case (help) :
+		printHelpInfo();
+		return 1;
 
-        case (add) :
-            addWord(value, 2, pVector);
-            return 1;
+	case (add) :
+		addWord(value, 2, pVector);
+		return 1;
 
-        case (delete) :
-            // Transform value to int, returns -1 if it failed
-            number = StringToInteger(value);
-            // If number is a real number
-            if (number > -1){
-                deleteWord(number, pVector);
-                return 1;
-            }
-            deleteWord(getWordPos(value, pVector), pVector);
-            return 1;
+	case (delete) :
+		// Transform value to int, returns -1 if it failed
+		number = StringToInteger(value);
+		// If number is a real number
+		if (number > -1){
+			deleteWord(number, pVector);
+			return 1;
+		}
+		deleteWord(getWordPos(value, pVector), pVector);
+		return 1;
 
-        case (edit) :
-            // Transform value to int, returns -1 if it failed
-            number = StringToInteger(value);
-            // If number is a real number
-            if (number > -1){
-                editWord(number, pVector);
-                return 1;
-            }
-            editWord(getWordPos(value, pVector), pVector);
-            return 1;
+	case (edit) :
+		// Transform value to int, returns -1 if it failed
+		number = StringToInteger(value);
+		// If number is a real number
+		if (number > -1){
+			editWord(number, pVector);
+			return 1;
+		}
+		editWord(getWordPos(value, pVector), pVector);
+		return 1;
 
-        case (find) :
-            pCompareVector = searchForWords(value, pVector);
-            if (vectorSize(&pCompareVector) > 0) {
-                printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
-            }
-            vectorFree(&pCompareVector);
-            return 1;
+	case (find) :
+		pCompareVector = searchForWords(value, pVector);
+		if (vectorSize(&pCompareVector) > 0) {
+			printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
+		}
+		vectorFree(&pCompareVector);
+		return 1;
 
-        case (print) :
-            printWordsInVector(pVector, 0, vectorSize(pVector));
-            return 1;
+	case (print) :
+		printWordsInVector(pVector, 0, vectorSize(pVector));
+		return 1;
 
-        case (load) :
-            vectorClear(pVector);
-            storeWordsFromFile(value, pVector);
-            return 1;
+	case (load) :
+		vectorClear(pVector);
+		FILE *fileToLoad = openFile(value, "r");
+		storeWordsFromFile(fileToLoad, pVector);
+		closeFile(fileToLoad);
+		return 1;
 
-        case (save) :
-            if (saveWordsToFile(value, pVector) == -1){
-                printf("You have nothing to save idiot! ;)");
-            };
-            return 1;
+	case (save) :
+	{
+		FILE *fileToSave = openFile(value, "w");
+		int result = saveWordsToFile(fileToSave, pVector);
+		closeFile(fileToSave);
+		if (result == -1){
+			printf("You have nothing to save idiot! ;)");
+		};
+		return 1;
+	}
+	case (exitProg) :
+		return 0;
 
-        case (exitProg) :
-            return 0;
-
-        default:
-            printf("Error: Command doesn't exist. Try again.");
-            return -1;
-    }
+	default:
+		printf("Error: Command doesn't exist. Try again.");
+		return -1;
+	}
 
 	return -1;
 }
@@ -543,7 +527,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 //###########################################################//
 int main()
 {
-	String command, value;
+	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
 	Vector container;
 	vectorInit(&container);
 
