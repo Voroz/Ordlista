@@ -1,3 +1,7 @@
+/*Nu har du gått loss i koden ser jag. Inga kommandon funkar längre :).
+Orkar inte kolla på vad du har ändrat exakt, men skriver en kommentar här så
+du vet att det inte var mina senaste ändringar nu som gjorde det.*/
+
 #define _CRT_SECURE_NO_WARNINGS
 
 
@@ -460,7 +464,7 @@ void readInput(String *pCommand, String *pValue){
 		FreeBlock(commandInput);
 		FreeBlock(valueInput);
 		//memcpy(*pValue, valueInput, (StringLength(valueInput) + 1));
-		
+
 	}
 	//memcpy(*pCommand, commandInput, (StringLength(commandInput) + 1));
 	//FreeBlock(commandInput);
@@ -468,74 +472,70 @@ void readInput(String *pCommand, String *pValue){
 
 //TODO: Add Save and Load command
 int switchCommand(String command, String value, Vector *pVector) {
+    int number;
+    Vector pCompareVector;
 	switch (readCommand(command)){
-	case (help) :
-		printHelpInfo();
-		break;
-	case (add) :
-		addWord(value, 2, pVector);
-		return 1;
-	case (delete) :
-	{
-		// Transform value to int, returns -1 if it failed
-		int number = StringToInteger(value);
-		// If number is a real number 
-		if (number > -1){
-			deleteWord(number, pVector);
-			return 1;
-		}
-		deleteWord(getWordPos(value, pVector), pVector);
-		return 1;
-	}
-	case (edit) :
-	{
-		// Transform value to int, returns -1 if it failed
-		int number = StringToInteger(value);
-		// If number is a real number
-		if (number > -1){
-			editWord(number, pVector);
-			return 1;
-		}
-		editWord(findPosForWord(value, pVector), pVector);
-		return 1;
-	}
-	case (find) :
-	{
-		Vector pCompareVector = searchForWords(value, pVector);
-		if (vectorSize(&pCompareVector) > 0) {
-			printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
-		}
-		vectorFree(&pCompareVector);
-		return 1;
-	}
-	case (print) :
-	{
-		printWordsInVector(pVector, 0, vectorSize(pVector));
-		return 1;
+        case (help) :
+            printHelpInfo();
+            return 1;
 
-	}
-	case (load) :
-	{
-		vectorClear(pVector);
-		storeWordsFromFile(value, pVector);
-		return 1;
+        case (add) :
+            addWord(value, 2, pVector);
+            return 1;
 
-	}
-	case (save) :
-	{
-		if (saveWordsToFile(value, pVector) == -1){
-			printf("You have nothing to save idiot! ;)");
-		};
-		return 1;
+        case (delete) :
+            // Transform value to int, returns -1 if it failed
+            number = StringToInteger(value);
+            // If number is a real number
+            if (number > -1){
+                deleteWord(number, pVector);
+                return 1;
+            }
+            deleteWord(getWordPos(value, pVector), pVector);
+            return 1;
 
-	}
-	case (exitProg) :
-		return 0;
+        case (edit) :
+            // Transform value to int, returns -1 if it failed
+            number = StringToInteger(value);
+            // If number is a real number
+            if (number > -1){
+                editWord(number, pVector);
+                return 1;
+            }
+            editWord(findPosForWord(value, pVector), pVector);
+            return 1;
 
-	default:
-		printf("Error: Command doesn't exist. Try again.");
-		return -1;
-	}
+        case (find) :
+            pCompareVector = searchForWords(value, pVector);
+            if (vectorSize(&pCompareVector) > 0) {
+                printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
+            }
+            vectorFree(&pCompareVector);
+            return 1;
+
+        case (print) :
+            printWordsInVector(pVector, 0, vectorSize(pVector));
+            return 1;
+
+        case (load) :
+            vectorClear(pVector);
+            storeWordsFromFile(value, pVector);
+            return 1;
+
+        case (save) :
+            if (saveWordsToFile(value, pVector) == -1){
+                printf("You have nothing to save idiot! ;)");
+            };
+            return 1;
+
+        case (exitProg) :
+            return 0;
+
+        default:
+            printf("Error: Command doesn't exist. Try again.");
+            return -1;
+    }
+
 	return -1;
 }
 
