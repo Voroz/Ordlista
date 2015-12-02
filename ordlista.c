@@ -34,7 +34,7 @@ void vectorInit(Vector *pVector){
 	pVector->capacity = VECTOR_INITIAL_CAPACITY;
 
 	// Allocate memory for vector->data
-	pVector->data = GetBlock(sizeof(void*) * pVector->capacity);
+	pVector->data = GetBlock(sizeof(void*)* pVector->capacity);
 }
 
 int vectorSize(Vector *pVector){
@@ -44,7 +44,7 @@ int vectorSize(Vector *pVector){
 static void vectorDoubleCapacityIfFull(Vector *pVector){
 	if (pVector->size >= pVector->capacity){
 
-		void **newMemory = realloc(pVector->data, sizeof(void*) * (pVector->capacity * 2));
+		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity * 2));
 		if (newMemory){
 #ifdef DEBUG_ON
 			printf("Vector resize: %d to %d\n", pVector->size, (pVector->capacity * 2));
@@ -58,7 +58,7 @@ static void vectorDoubleCapacityIfFull(Vector *pVector){
 static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	if (pVector->capacity / pVector->size >= 2){
 
-		void **newMemory = realloc(pVector->data, sizeof(void*) * (pVector->capacity / 2));
+		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity / 2));
 		if (newMemory){
 #ifdef DEBUG_ON
 			printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
@@ -164,6 +164,7 @@ void vectorClear(Vector *pVector){
 	vectorInit(pVector);
 }
 
+
 //###########################################################//
 // TODO: Replace å,ä,ö and Å,Ä,Ö with
 // \x86 = å
@@ -174,6 +175,48 @@ void vectorClear(Vector *pVector){
 // \x8E = Ä
 // \x99 = Ö
 // function(String word);
+
+// Byter inte tecken på åäö när man printar.
+int convertToSwedishChars(String word) {
+	//char doesWordContainSweChar[20] = word;// Hårdkodad längd på arrayen, ska fixas? 
+	char s1[1024];
+	int i, n;
+
+	for (i = 0, n = 0; word[i] != '\0'; i++)
+	{
+		if (word[i] == 'å')
+		{
+			s1[n] = '/x86';
+
+		}
+		if (word[i] == 'ä')
+		{
+			s1[n] = '/x84';
+
+		}
+		if (word[i] == 'ö')
+		{
+			s1[n] = '/x94';
+
+		}
+		if (word[i] == 'Å')
+		{
+			s1[n] = '/x8F';
+
+		}
+		if (word[i] == 'Ä')
+		{
+			s1[n] = '/x8E';
+
+		}
+		if (word[i] == 'Ö')
+		{
+			s1[n] = '/x99';
+
+		}
+		return 0;
+	}
+}
 
 int storeWordsFromFile(String filename, Vector *pVector){
 	FILE *file;
@@ -297,7 +340,7 @@ int deleteWord(int index, Vector *pVector){
 	}
 
 	vectorRemove(pVector, index);
-	printf("Ordet togs bort\n");
+	printf("The word has been deleted.\n");
 	return 1;
 }
 
@@ -321,13 +364,13 @@ int addWord(String word, int index, Vector *pVector){
 	// If we're adding word to back of vector
 	if (index == vectorSize(pVector)){
 		vectorAppend(pVector, word, (strlen(word) + 1));
-		printf("Ordet las till\n");
+		printf("The word has been added.\n");
 		return 1;
 	}
 
 	// If we're inserting word
 	vectorInsert(pVector, index, word, (strlen(word) + 1));
-	printf("Ordet las till\n");
+	printf("The word has been added\n");
 	return 1;
 }
 
@@ -343,6 +386,10 @@ int editWord(int index, Vector *pVector){
 	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
 	wordToEdit = GetLine();
 	// TODO: Check if wordToEdit is empty string and dont save it and return -2
+	if (wordToEdit == '\0')
+	{
+		return -2; 
+	}
 	vectorSet(pVector, index, wordToEdit);
 	return 1;
 }
@@ -444,6 +491,7 @@ void readInput(String *pCommand, String *pValue){
 		valueInput;
 
 	userInput = GetLine();
+	ConvertToLowerCase(userInput); // this doesnt convert the user input to lower case...
 
 	int spaceChar = (FindChar(' ', userInput, 0));
 	if (spaceChar == -1){
@@ -452,7 +500,7 @@ void readInput(String *pCommand, String *pValue){
 		*pCommand = commandInput;
 		*pValue = '\0';
 
-		FreeBlock(commandInput);
+		//FreeBlock(commandInput);
 	}
 	else {
 		commandInput = SubString(userInput, 0, (spaceChar - 1));
@@ -461,8 +509,8 @@ void readInput(String *pCommand, String *pValue){
 		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
 		*pValue = valueInput;
 
-		FreeBlock(commandInput);
-		FreeBlock(valueInput);
+		//FreeBlock(commandInput);
+		//FreeBlock(valueInput);
 		//memcpy(*pValue, valueInput, (StringLength(valueInput) + 1));
 
 	}
@@ -472,69 +520,87 @@ void readInput(String *pCommand, String *pValue){
 
 //TODO: Add Save and Load command
 int switchCommand(String command, String value, Vector *pVector) {
-    int number;
-    Vector pCompareVector;
+	int number;
+	Vector pCompareVector;
 	switch (readCommand(command)){
-        case (help) :
-            printHelpInfo();
-            return 1;
+	case (help) :
+		printHelpInfo();
+		return 1;
 
-        case (add) :
-            addWord(value, 2, pVector);
-            return 1;
+	case (add) :
+		addWord(value, 2, pVector);
+		return 1;
 
-        case (delete) :
-            // Transform value to int, returns -1 if it failed
-            number = StringToInteger(value);
-            // If number is a real number
-            if (number > -1){
-                deleteWord(number, pVector);
-                return 1;
-            }
-            deleteWord(getWordPos(value, pVector), pVector);
-            return 1;
+	case (delete) :
+		// Transform value to int, returns -1 if it failed
+		number = StringToInteger(value);
+		// If number is a real number
+		if (number > -1){
+			deleteWord(number, pVector);
+			return 1;
+		}
+		deleteWord(getWordPos(value, pVector), pVector);
+		return 1;
 
-        case (edit) :
-            // Transform value to int, returns -1 if it failed
-            number = StringToInteger(value);
-            // If number is a real number
-            if (number > -1){
-                editWord(number, pVector);
-                return 1;
-            }
-            editWord(getWordPos(value, pVector), pVector);
-            return 1;
+		//TODO: the Error messages doesnt work properly.
+	case (edit) :
+		// Transform value to int, returns -1 if it failed
+	
+		number = StringToInteger(value);
+		int result;
 
-        case (find) :
-            pCompareVector = searchForWords(value, pVector);
-            if (vectorSize(&pCompareVector) > 0) {
-                printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
-            }
-            vectorFree(&pCompareVector);
-            return 1;
+		if (number == 1){
+			printf("The word has succsesfully changed.");
+			return 1;
+		}
+		// If number is a real number
+		if (number > -1){
+			result = editWord(number, pVector);
+			printf("The word doesnt exist.");
+			return 1;
+		}
+		
+		if (number == -2){
+			printf("There is nothing to edit.");
+			return 1;
+		}
+		result = editWord(getWordPos(value, pVector), pVector);
+		return 1;
 
-        case (print) :
-            printWordsInVector(pVector, 0, vectorSize(pVector));
-            return 1;
+	case (find) :
+		pCompareVector = searchForWords(value, pVector);
+		if (vectorSize(&pCompareVector) > 0) {
+			printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
+		}
+		if (vectorSize(&pCompareVector) == -1) {
+			printf("The word doesnt exist.");
+			return 1;
+		}
+		vectorFree(&pCompareVector);
+		return 1;
 
-        case (load) :
-            vectorClear(pVector);
-            storeWordsFromFile(value, pVector);
-            return 1;
+	case (print) :
+		printWordsInVector(pVector, 0, vectorSize(pVector));
+		return 1;
 
-        case (save) :
-            if (saveWordsToFile(value, pVector) == -1){
-                printf("You have nothing to save idiot! ;)");
-            };
-            return 1;
+	case (load) :
+		vectorClear(pVector);
+		storeWordsFromFile(value, pVector);
+		return 1;
 
-        case (exitProg) :
-            return 0;
+	case (save) :
+		if (saveWordsToFile(value, pVector) == -1){
+			printf("You have nothing to save idiot! ;)");
+		};
+		return 1;
 
-        default:
-            printf("Error: Command doesn't exist. Try again.");
-            return -1;
-    }
+	case (exitProg) :
+		return 0;
+
+	default:
+		printf("Error: Command doesn't exist. Try again.");
+		return -1;
+	}
 
 	return -1;
 }
@@ -543,6 +609,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 //###########################################################//
 int main()
 {
+	printf("To load a file type: load <filename>");
 	String command, value;
 	Vector container;
 	vectorInit(&container);
