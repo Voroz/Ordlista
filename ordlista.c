@@ -502,7 +502,7 @@ int switchCommand(String command, String value, Vector *pVector) {
                 editWord(number, pVector);
                 return 1;
             }
-            editWord(findPosForWord(value, pVector), pVector);
+            editWord(getWordPos(value, pVector), pVector);
             return 1;
 
         case (find) :
