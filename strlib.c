@@ -143,6 +143,19 @@ int FindChar(char ch, String text, int start)
     return ((int) (cptr - text));
 }
 
+//New function
+int FindCharFromRight(char ch, String text, int start)
+{
+    char *cptr;
+
+    if (text == NULL) Error("NULL String passed to FindChar");
+    if (start < 0) start = 0;
+    if (start > strlen(text)) return (-1);
+    cptr = strrchr(text + start, ch);
+    if (cptr == NULL) return (-1);
+    return ((int) (cptr - text));
+}
+
 int FindString(String str, String text, int start)
 {
     char *cptr;
