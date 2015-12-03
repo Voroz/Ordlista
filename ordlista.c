@@ -280,8 +280,28 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 }
 
 // TODO: Use strcmp() to find postion of word and return position
-int findPosForWord(String wordA, String wordB){
-	return memcmp(wordA, wordB, strlen(wordA));
+int findPosForWord(String word, String wordB, Vector *pVector){
+
+	for (int i = 0; i < pVector; i++)// Loopar igenonm hela vectorn med alla orden.
+	{
+		strcmp(word, wordB);// Jämför word (som är ordet användaren vill lägga till?) med wordB (som är ordet som står på en raden forloopen är på?)
+
+		if (word > wordB)
+		{
+			continue; // om ordet ska längre ned i listan så ska loopen fortsätta.
+		}
+		if (word < wordB) // om ordet precis har blivit "mindre" då ska funtionen skicka tillbaka den raden som ordet i pVectorn står på
+		{	
+			
+			vectorInsert; 
+			//getWordPos;
+			return i;  
+		}
+	}
+
+	
+
+	//return memcmp(wordA, wordB, strlen(wordA));
 }
 
 // Find word and return word position
@@ -339,6 +359,30 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 		vectorRemove(pVector, index);
 	}
 }
+
+
+//int findPosForWord(String word, Vector *pVector)
+//{
+	//char wordCpy = strcpy(wordCpy, word);
+
+	//searchForWords(wordCpy, pVector);
+
+	//int posForWord = strcmp(wordCpy, &pVector);
+
+
+
+	//return posForWord;
+//}
+
+
+
+
+
+
+
+
+
+
 
 // TODO: Check if word already exist
 int addWord(String word, int index, Vector *pVector){
@@ -515,7 +559,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 
 	case (add) :
-		addWord(value, 2, pVector);
+		addWord(value, findPosForWord, pVector); /// hårdkodat noll, den ska bytas ut mot ett index där ordet passar in.
 		return 1;
 
 	case (delete) :
@@ -586,15 +630,15 @@ int switchCommand(String command, String value, Vector *pVector) {
 		fileToSave = openFile(value, "w");
 		switch (saveWordsToFile(fileToSave, pVector))
 		{
-			case 1:
-				break;
-			case -1:
-				printf("You have nothing to save.");
-				break;
-			case -2:
-				break;
-			default:
-				break;
+		case 1:
+			break;
+		case -1:
+			printf("You have nothing to save.");
+			break;
+		case -2:
+			break;
+		default:
+			break;
 		}
 		closeFile(fileToSave);
 		return 1;
