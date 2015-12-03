@@ -13,7 +13,7 @@
 
 #define VECTOR_INITIAL_CAPACITY 10
 #define MAX_WORD_LENGTH 100
-//#define DEBUG_ON
+#define DEBUG_ON
 
 typedef struct{
 	int size;		// Slots used so far
@@ -48,26 +48,24 @@ static void vectorFreeValue(void* value){
 
 static void vectorDoubleCapacityIfFull(Vector *pVector){
 	if (pVector->size >= pVector->capacity){
-
 		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity * 2));
 		if (newMemory){
-#ifdef DEBUG_ON
-			printf("Vector resize: %d to %d\n", pVector->size, (pVector->capacity * 2));
-#endif
+			#ifdef DEBUG_ON
+				printf("Vector resize: %d to %d\n", pVector->size, (pVector->capacity * 2));
+			#endif
 			pVector->data = newMemory;
 			pVector->capacity *= 2;
 		}
 	}
 }
-// TODO: Call free word function for each word
+
 static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	if (pVector->capacity / pVector->size >= 2){
-
 		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity / 2));
 		if (newMemory){
-#ifdef DEBUG_ON
-			printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
-#endif
+			#ifdef DEBUG_ON
+				printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
+			#endif
 			pVector->data = newMemory;
 			pVector->capacity /= 2;
 		}
@@ -84,9 +82,9 @@ void vectorAppend(Vector *pVector, void *value, int sizeOfElem){
 
 int vectorSet(Vector *pVector, int index, void *value){
 	if (index >= pVector->size || index < 0){
-#ifdef DEBUG_ON
-		printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		return -1;
 	}
 	// Set the value at the desired index
@@ -96,9 +94,9 @@ int vectorSet(Vector *pVector, int index, void *value){
 
 void* vectorGet(Vector *pVector, int index){
 	if (index >= pVector->size || index < 0){
-#ifdef DEBUG_ON
-		printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 	}
 	return pVector->data[index];
 }
@@ -109,9 +107,9 @@ void* vectorGet(Vector *pVector, int index){
 int vectorInsert(Vector *pVector, int index, void *value, int sizeOfElem){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
-#ifdef DEBUG_ON
-		printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		return -1;
 	}
 	// Make the vector one element larger to make room for the new value
@@ -132,17 +130,20 @@ int vectorInsert(Vector *pVector, int index, void *value, int sizeOfElem){
 int vectorRemove(Vector *pVector, int index){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
-#ifdef DEBUG_ON
-		printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		return -1;
 	}
+	// Remove value att index position
+	vectorFreeValue(pVector->data[index]);
 	// Move all values whos index is larger than 'index' one lower (element 4 becomes 5, 5 becomes 6, and so on)
 	for (int i = index; i < (pVector->size - 1); i++){
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
 	// Decrement vector->size and set last value to NULL 
-	vectorSet(pVector, (--pVector->size), NULL);
+	vectorSet(pVector, (pVector->size - 1), NULL);
+	pVector->size--;
 
 	// Check usage and halves vector is usage is <= 50%
 	vectorHalfCapacityIfNotUsed(pVector);
@@ -258,7 +259,6 @@ int storeWordsFromFile(FILE *file, Vector *pVector){
 		vectorAppend(pVector, word, (strlen(word) + 1));
 	}
 	free(word);
-
 	return 1;
 }
 
@@ -271,9 +271,9 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 		fprintf(file, "%s", vectorGet(pVector, vectorSize(pVector) - 1));
 	}
 	else{
-#ifdef DEBUG_ON
-		printf("'saveWordsToFile' - Vector doesn't contain anything!\n");
-#endif
+		#ifdef DEBUG_ON
+			printf("'saveWordsToFile' - Vector doesn't contain anything\n");
+		#endif
 		return -1;
 	}
 	return 1;
@@ -286,11 +286,10 @@ int findPosForWord(String wordA, String wordB){
 
 // Find word and return word position
 int getWordPos(String word, Vector *pVector){
-	if (strlen(word) <= 0)
-	{
-#ifdef DEBUG_ON
-		printf("findPosForWord: Word to search for is empty string\n");
-#endif
+	if (strlen(word) <= 0){
+		#ifdef DEBUG_ON
+			printf("findPosForWord: Word to search for is empty string\n");
+		#endif
 		return -2;
 	}
 	for (int i = 0; i < vectorSize(pVector); i++){
@@ -322,9 +321,9 @@ Vector searchForWords(String searchTerm, Vector *pVector){
 int deleteWord(int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		return -1;
 	}
 
@@ -344,14 +343,14 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 int addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index > vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		return -1;
 	}
 	if (StringToInteger(word) != -1){
 		//Error: can not add number as a word
-		return;
+		return -2;
 	}
 	// If we're adding word to back of vector
 	if (index == vectorSize(pVector)){
@@ -362,10 +361,8 @@ int addWord(String word, int index, Vector *pVector){
 
 	// If we're inserting word
 	vectorInsert(pVector, index, word, (strlen(word) + 1));
-	printf("The word has been added\n");
+	printf("The word has been added.\n");
 	return 1;
-
-
 }
 
 // TODO: Check if word already exist
@@ -373,9 +370,9 @@ int editWord(int index, Vector *pVector){
 	String wordToEdit = vectorGet(pVector, index);
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		return -1;
 	}
 	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
@@ -396,16 +393,15 @@ void printToScreen(String word, int position){
 int printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	// Check if out of bounds
 	if (startIndex < 0 || startIndex >= vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
+		#endif
 		return -1;
 	}
-	if ((startIndex + numberOfWords) > vectorSize(pVector))
-	{
-#ifdef DEBUG_ON
-		printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
-#endif
+	if ((startIndex + numberOfWords) > vectorSize(pVector)){
+		#ifdef DEBUG_ON
+			printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
+		#endif
 		return -2;
 	}
 
@@ -443,33 +439,33 @@ typedef enum {
 	exitProg
 };
 
-int readCommand(String value){
-	if (value[0] == 'h' && StringEqual("help", ConvertToLowerCase(value))){
+int readCommand(String command){
+	if (command[0] == 'h' && StringEqual("help", command)){
 		return help;
 	}
-	if (value[0] == 'a' && StringEqual("add", ConvertToLowerCase(value))){
+	if (command[0] == 'a' && StringEqual("add", command)){
 		return add;
 	}
-	if (value[0] == 'd' && StringEqual("delete", ConvertToLowerCase(value))){
+	if (command[0] == 'd' && StringEqual("delete", command)){
 		return delete;
 	}
-	if (value[0] == 'f' && StringEqual("find", ConvertToLowerCase(value))){
+	if (command[0] == 'f' && StringEqual("find", command)){
 		return find;
 	}
-	if (value[0] == 'p' && StringEqual("print", ConvertToLowerCase(value))){
+	if (command[0] == 'p' && StringEqual("print", command)){
 		return print;
 	}
-	if (value[0] == 'l' && StringEqual("load", ConvertToLowerCase(value))){
+	if (command[0] == 'l' && StringEqual("load", command)){
 		return load;
 	}
-	if (value[0] == 's' && StringEqual("save", ConvertToLowerCase(value))){
+	if (command[0] == 's' && StringEqual("save", command)){
 		return save;
 	}
-	if (value[0] == 'e'){
-		if (StringEqual("edit", ConvertToLowerCase(value))){
+	if (command[0] == 'e'){
+		if (StringEqual("edit", command)){
 			return edit;
 		}
-		if (StringEqual("exit", ConvertToLowerCase(value))){
+		if (StringEqual("exit", command)){
 			return exitProg;
 		}
 	}
@@ -477,7 +473,7 @@ int readCommand(String value){
 	return 0;
 }
 
-void readInput(String pCommand, String pValue){
+void readInput(String command, String value){
 	printf("\n\n%c", '>');
 
 	String userInput,
@@ -490,16 +486,16 @@ void readInput(String pCommand, String pValue){
 	int spaceChar = (FindChar(' ', userInput, 0));
 	if (spaceChar == -1){
 		commandInput = SubString(userInput, 0, StringLength(userInput));
-		pValue = '\0';
+		value = '\0';
 	}
 	else {
 		commandInput = SubString(userInput, 0, (spaceChar - 1));
 		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
 
-		memcpy(pValue, valueInput, (StringLength(valueInput) + 1));
+		memcpy(value, valueInput, (StringLength(valueInput) + 1));
 		FreeBlock(valueInput);
 	}
-	memcpy(pCommand, commandInput, (StringLength(commandInput) + 1));
+	memcpy(command, commandInput, (StringLength(commandInput) + 1));
 	FreeBlock(commandInput);
 	FreeBlock(userInput);
 }
@@ -607,16 +603,16 @@ int switchCommand(String command, String value, Vector *pVector) {
 	return -1;
 }
 
-
 //###########################################################//
 int main()
 {
-	printf("WordMagic ver 0.1\n");
-	printf("To get started, type help.");
+
 	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
 	Vector container;
 	vectorInit(&container);
 
+	printf("WordMagic ver 0.1\n");
+	printf("To get started, type help.");
 	int check = 1;
 	while (check){
 		readInput(command, value);
