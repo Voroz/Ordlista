@@ -50,9 +50,9 @@ static void vectorDoubleCapacityIfFull(Vector *pVector){
 	if (pVector->size >= pVector->capacity){
 		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity * 2));
 		if (newMemory){
-			#ifdef DEBUG_ON
-				printf("Vector resize: %d to %d\n", pVector->size, (pVector->capacity * 2));
-			#endif
+#ifdef DEBUG_ON
+			printf("Vector resize: %d to %d\n", pVector->size, (pVector->capacity * 2));
+#endif
 			pVector->data = newMemory;
 			pVector->capacity *= 2;
 		}
@@ -63,9 +63,9 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	if (pVector->capacity / pVector->size >= 2){
 		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity / 2));
 		if (newMemory){
-			#ifdef DEBUG_ON
-				printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
-			#endif
+#ifdef DEBUG_ON
+			printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
+#endif
 			pVector->data = newMemory;
 			pVector->capacity /= 2;
 		}
@@ -83,9 +83,9 @@ void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
 
 int vectorSet(Vector *pVector, int index, void* *value){
 	if (index >= pVector->size || index < 0){
-		#ifdef DEBUG_ON
-			printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 		return -1;
 	}
 	// Set the value at the desired index
@@ -95,9 +95,9 @@ int vectorSet(Vector *pVector, int index, void* *value){
 
 void* vectorGet(Vector *pVector, int index){
 	if (index >= pVector->size || index < 0){
-		#ifdef DEBUG_ON
-			printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 	}
 	return pVector->data[index];
 }
@@ -108,9 +108,9 @@ void* vectorGet(Vector *pVector, int index){
 int vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
-		#ifdef DEBUG_ON
-			printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 		return -1;
 	}
 	// Make the vector one element larger to make room for the new value
@@ -131,9 +131,9 @@ int vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 int vectorRemove(Vector *pVector, int index){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
-		#ifdef DEBUG_ON
-			printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 		return -1;
 	}
 	// Remove value att index position
@@ -167,19 +167,19 @@ void vectorClear(Vector *pVector){
 }
 
 String findExtension(String filename){
-    return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
+	return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
 }
 
 int appendFileExtension(String filename, String extension){
-    //Exit if there's already an extension
+	//Exit if there's already an extension
 	if (findExtension(filename)[0] == '.'){
-        #ifdef DEBUG_ON
-            printf("'appendFileExtension' - File already has an extension.");
-        #endif
-        return -1;
+#ifdef DEBUG_ON
+		printf("'appendFileExtension' - File already has an extension.");
+#endif
+		return -1;
 	}
 	strcat(filename, extension);
-    return 1;
+	return 1;
 }
 
 // TODO: change to work with all fileextensions
@@ -223,25 +223,36 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 		fprintf(file, "%s", vectorGet(pVector, vectorSize(pVector) - 1));
 	}
 	else{
-		#ifdef DEBUG_ON
-			printf("'saveWordsToFile' - Vector doesn't contain anything\n");
-		#endif
+#ifdef DEBUG_ON
+		printf("'saveWordsToFile' - Vector doesn't contain anything\n");
+#endif
 		return -1;
 	}
 	return 1;
 }
 
-// TODO: Use strcmp() to find postion of word and return position
-int findPosForWord(String wordA, String wordB){
-	return memcmp(wordA, wordB, strlen(wordA));
+// TODO: get case(add) to implement this function.
+int findPosForWord(String word, Vector *pVector){
+	for (int i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
+		if (strcmp(word, pVector->data[i]) > 1){  // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
+			continue;
+		}
+		else if (strcmp(word, pVector->data[i]) < 1){
+			return i;
+		}
+		else{
+			return -3;
+		}
+	}
 }
+
 
 // Find word and return word position
 int getWordPos(String word, Vector *pVector){
 	if (strlen(word) <= 0){
-		#ifdef DEBUG_ON
-			printf("findPosForWord: Word to search for is empty string\n");
-		#endif
+#ifdef DEBUG_ON
+		printf("findPosForWord: Word to search for is empty string\n");
+#endif
 		return -2;
 	}
 	for (int i = 0; i < vectorSize(pVector); i++){
@@ -273,9 +284,9 @@ Vector searchForWords(String searchTerm, Vector *pVector){
 int deleteWord(int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 		return -1;
 	}
 
@@ -295,9 +306,9 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 int addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index > vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 		return -1;
 	}
 	if (StringToInteger(word) != -1){
@@ -322,9 +333,9 @@ int editWord(int index, Vector *pVector){
 	String wordToEdit = vectorGet(pVector, index);
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+#endif
 		return -1;
 	}
 	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
@@ -345,15 +356,15 @@ void printToScreen(String word, int position){
 int printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	// Check if out of bounds
 	if (startIndex < 0 || startIndex >= vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
+#endif
 		return -1;
 	}
 	if ((startIndex + numberOfWords) > vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
-		#endif
+#ifdef DEBUG_ON
+		printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
+#endif
 		return -2;
 	}
 
@@ -464,7 +475,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 
 	case (add) :
-		addWord(value, 2, pVector);
+		addWord(value, findPosForWord, pVector);/// den vill inte hoppa in i funktionen och returnera den rätta positionen. Så nu skiter den i att lägga till ord.
 		return 1;
 
 	case (delete) :
@@ -501,6 +512,9 @@ int switchCommand(String command, String value, Vector *pVector) {
 		case -2:
 			printf("The word doesn't exist.");
 			break;
+		case -3:
+			printf("The word does already exist");
+			break;
 		default:
 			break;
 		}
@@ -509,8 +523,8 @@ int switchCommand(String command, String value, Vector *pVector) {
 		pCompareVector = searchForWords(value, pVector);
 		if (vectorSize(&pCompareVector) > 0) {
 			for (int i = 0; i < vectorSize(&pCompareVector); i++){
-                printf("\n%d\t%s", vectorGet(&pCompareVector, i), vectorGet(pVector, vectorGet(&pCompareVector, i)));
-            }
+				printf("\n%d\t%s", vectorGet(&pCompareVector, i), vectorGet(pVector, vectorGet(&pCompareVector, i)));
+			}
 		}
 		if (vectorSize(&pCompareVector) == -1) {
 			printf("The word doesnt exist.");
@@ -526,31 +540,31 @@ int switchCommand(String command, String value, Vector *pVector) {
 	case (load) :
 		vectorClear(pVector);
 		if (!(fileToLoad = openFile(value, "r"))){
-            return -1;
+			return -1;
 		}
 
-        storeWordsFromFile(fileToLoad, pVector);
-        closeFile(fileToLoad);
+		storeWordsFromFile(fileToLoad, pVector);
+		closeFile(fileToLoad);
 		return 1;
 
 	case (save) :
 		if (!(fileToSave = openFile(value, "w"))){
-            return -1;
+			return -1;
 		}
-		switch (saveWordsToFile(fileToSave, pVector))
-		{
-			case 1:
-				break;
-			case -1:
-				printf("You have nothing to save.");
-				break;
-			case -2:
-				break;
-			default:
-				break;
-		}
-		closeFile(fileToSave);
-		return 1;
+				switch (saveWordsToFile(fileToSave, pVector))
+				{
+				case 1:
+					break;
+				case -1:
+					printf("You have nothing to save.");
+					break;
+				case -2:
+					break;
+				default:
+					break;
+				}
+				closeFile(fileToSave);
+				return 1;
 	case (exitProg) :
 		return 0;
 	default:
@@ -563,9 +577,9 @@ int switchCommand(String command, String value, Vector *pVector) {
 //###########################################################//
 int main()
 {
-    if(!setlocale(LC_ALL, "")) {
-        printf("error while setting locale\n");
-    }
+	if (!setlocale(LC_ALL, "")) {
+		printf("error while setting locale\n");
+	}
 	printf("WordMagic version <0.1>\n");
 	printf("To get started, type help.\n");
 
@@ -573,8 +587,8 @@ int main()
 	Vector container;
 	vectorInit(&container);
 
-	printf("WordMagic ver 0.1\n");
-	printf("To get started, type help.");
+	//printf("WordMagic ver 0.1\n");
+	//printf("To get started, type help.");
 	int check = 1;
 	while (check){
 		readInput(command, value);
