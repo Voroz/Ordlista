@@ -1,3 +1,5 @@
+//#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -34,13 +36,13 @@ int vectorSize(Vector *pVector){
 	return pVector->size;
 }
 
-static void** vectorCopyValue(void** value, int sizeOfElem){
+static void** vectorCopyValue(void* *value, int sizeOfElem){
 	void* ptr = GetBlock(sizeOfElem);
 	memcpy(ptr, value, sizeOfElem);
 	return ptr;
 }
 
-static void vectorFreeValue(void* value){
+static void vectorFreeValue(void* *value){
 	free(value);
 }
 
@@ -70,7 +72,7 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	}
 }
 
-void vectorAppend(Vector *pVector, void** value, int sizeOfElem){
+void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
 	// Make sure there's room to expand into
 	vectorDoubleCapacityIfFull(pVector);
 
@@ -79,7 +81,7 @@ void vectorAppend(Vector *pVector, void** value, int sizeOfElem){
 	return;
 }
 
-int vectorSet(Vector *pVector, int index, void **value){
+int vectorSet(Vector *pVector, int index, void* *value){
 	if (index >= pVector->size || index < 0){
 		#ifdef DEBUG_ON
 			printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
@@ -103,7 +105,7 @@ void* vectorGet(Vector *pVector, int index){
 //
 // Moves all values one step higer from index position and inserts the new value at index
 //
-int vectorInsert(Vector *pVector, int index, void **value, int sizeOfElem){
+int vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
 		#ifdef DEBUG_ON
@@ -140,14 +142,12 @@ int vectorRemove(Vector *pVector, int index){
 	for (int i = index; i < (pVector->size - 1); i++){
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
-<<<<<<< HEAD
 	// Decrement vector->size and set last value to NULL 
 	vectorSet(pVector, (pVector->size - 1), NULL);
 	pVector->size--;
-=======
+
 	// Decrement vector->size and set last value to NULL
 	vectorSet(pVector, (--pVector->size), NULL);
->>>>>>> ad8e43db8a900ccb9d6fbd33f6b629703d887eb4
 
 	// Check usage and halves vector is usage is <= 50%
 	vectorHalfCapacityIfNotUsed(pVector);
@@ -178,7 +178,7 @@ int appendFileExtension(String filename, String extension){
         #endif
         return -1;
 	}
-    strcat(filename, extension);
+	strcat(filename, extension);
     return 1;
 }
 
@@ -563,15 +563,12 @@ int switchCommand(String command, String value, Vector *pVector) {
 //###########################################################//
 int main()
 {
-<<<<<<< HEAD
-
-=======
     if(!setlocale(LC_ALL, "")) {
         printf("error while setting locale\n");
     }
 	printf("WordMagic version <0.1>\n");
 	printf("To get started, type help.\n");
->>>>>>> ad8e43db8a900ccb9d6fbd33f6b629703d887eb4
+
 	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
 	Vector container;
 	vectorInit(&container);
