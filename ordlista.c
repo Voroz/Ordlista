@@ -1,11 +1,9 @@
-#define _CRT_SECURE_NO_WARNINGS
-
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <String.h>
 #include <ctype.h>
+#include <locale.h>
 #include "genlib.h"
 #include "random.h"
 #include "simpio.h"
@@ -36,7 +34,7 @@ int vectorSize(Vector *pVector){
 	return pVector->size;
 }
 
-static void* vectorCopyValue(void* value, int sizeOfElem){
+static void** vectorCopyValue(void** value, int sizeOfElem){
 	void* ptr = GetBlock(sizeOfElem);
 	memcpy(ptr, value, sizeOfElem);
 	return ptr;
@@ -74,15 +72,16 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 	}
 }
 
-void vectorAppend(Vector *pVector, void *value, int sizeOfElem){
+void vectorAppend(Vector *pVector, void** value, int sizeOfElem){
 	// Make sure there's room to expand into
 	vectorDoubleCapacityIfFull(pVector);
 
 	// Append the value and increment vector->size
 	pVector->data[pVector->size++] = vectorCopyValue(value, sizeOfElem);
+	return;
 }
 
-int vectorSet(Vector *pVector, int index, void *value){
+int vectorSet(Vector *pVector, int index, void **value){
 	if (index >= pVector->size || index < 0){
 #ifdef DEBUG_ON
 		printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
@@ -90,7 +89,7 @@ int vectorSet(Vector *pVector, int index, void *value){
 		return -1;
 	}
 	// Set the value at the desired index
-	pVector->data[index] = value;
+	pVector->data[index] = *value;
 	return 1;
 }
 
@@ -106,7 +105,7 @@ void* vectorGet(Vector *pVector, int index){
 //
 // Moves all values one step higer from index position and inserts the new value at index
 //
-int vectorInsert(Vector *pVector, int index, void *value, int sizeOfElem){
+int vectorInsert(Vector *pVector, int index, void **value, int sizeOfElem){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
 #ifdef DEBUG_ON
@@ -122,7 +121,7 @@ int vectorInsert(Vector *pVector, int index, void *value, int sizeOfElem){
 		vectorSet(pVector, i, pVector->data[i - 1]);
 	}
 	// Save the value at a new adress
-	void* ptr = vectorCopyValue(value, sizeOfElem);
+	void* ptr = vectorCopyValue(*value, sizeOfElem);
 	// Save the new adress in the vector
 	vectorSet(pVector, index, ptr);
 
@@ -141,7 +140,7 @@ int vectorRemove(Vector *pVector, int index){
 	for (int i = index; i < (pVector->size - 1); i++){
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
-	// Decrement vector->size and set last value to NULL 
+	// Decrement vector->size and set last value to NULL
 	vectorSet(pVector, (--pVector->size), NULL);
 
 	// Check usage and halves vector is usage is <= 50%
@@ -161,78 +160,27 @@ void vectorClear(Vector *pVector){
 	vectorInit(pVector);
 }
 
-
-//###########################################################//
-// TODO: Replace å,ä,ö and Å,Ä,Ö with
-// \x86 = å
-// \x84 = ä
-// \x94 = ö
-
-// \x8F = Å
-// \x8E = Ä
-// \x99 = Ö
-// function(String word);
-
-// Byter inte tecken på åäö när man printar.
-int convertToSwedishChars(String word) {
-	//char doesWordContainSweChar[20] = word;// Hårdkodad längd på arrayen, ska fixas? 
-	char s1[1024];
-	int i, n;
-
-	for (i = 0, n = 0; word[i] != '\0'; i++)
-	{
-		if (word[i] == 'å')
-		{
-			s1[n] = '/x86';
-
-		}
-		if (word[i] == 'ä')
-		{
-			s1[n] = '/x84';
-
-		}
-		if (word[i] == 'ö')
-		{
-			s1[n] = '/x94';
-
-		}
-		if (word[i] == 'Å')
-		{
-			s1[n] = '/x8F';
-
-		}
-		if (word[i] == 'Ä')
-		{
-			s1[n] = '/x8E';
-
-		}
-		if (word[i] == 'Ö')
-		{
-			s1[n] = '/x99';
-
-		}
-		return 0;
-	}
+String findExtension(String filename){
+    return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
 }
 
-void appendFileExtension(String value, String extension){
-	// Get the last charecters of 'value', exactly the amount of charecters in 'extension'
-	String fileEnding = SubString(value, (strlen(value) - strlen(extension)), strlen(value));
-
-	// If the string 'value' dosen't already end with 'ext' add 'ext'
-	if (strcmp(fileEnding, extension)){
-		String newExt = Concat(".", extension);
-		strcat(value, newExt);
-		FreeBlock(newExt);
+int appendFileExtension(String filename, String extension){
+    //Exit if there's already an extension
+	if (findExtension(filename)[0] == '.'){
+        #ifdef DEBUG_ON
+            printf("'appendFileExtension' - File already has an extension.");
+        #endif
+        return -1;
 	}
+    strcat(filename, extension);
+    return 1;
 }
 
 // TODO: change to work with all fileextensions
 FILE *openFile(String filename, String accessMode){
 	FILE *file;
-
 	// Add txt extension to 'filename' if not already there
-	appendFileExtension(filename, "txt");
+	appendFileExtension(filename, ".txt");
 
 	// Open file and check for errors
 	if (!(file = fopen(filename, accessMode))){
@@ -253,7 +201,6 @@ int storeWordsFromFile(FILE *file, Vector *pVector){
 	word = GetBlock(MAX_WORD_LENGTH);
 	// Read word into temporary memory
 	for (int i = 0; fscanf(file, "%s\n", word) != EOF; i++){
-		convertToSwedishChars(word);
 		// Append word to vector
 		vectorAppend(pVector, word, (strlen(word) + 1));
 	}
@@ -280,28 +227,8 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 }
 
 // TODO: Use strcmp() to find postion of word and return position
-int findPosForWord(String word, String wordB, Vector *pVector){
-
-	for (int i = 0; i < pVector; i++)// Loopar igenonm hela vectorn med alla orden.
-	{
-		strcmp(word, wordB);// Jämför word (som är ordet användaren vill lägga till?) med wordB (som är ordet som står på en raden forloopen är på?)
-
-		if (word > wordB)
-		{
-			continue; // om ordet ska längre ned i listan så ska loopen fortsätta.
-		}
-		if (word < wordB) // om ordet precis har blivit "mindre" då ska funtionen skicka tillbaka den raden som ordet i pVectorn står på
-		{	
-			
-			vectorInsert; 
-			//getWordPos;
-			return i;  
-		}
-	}
-
-	
-
-	//return memcmp(wordA, wordB, strlen(wordA));
+int findPosForWord(String wordA, String wordB){
+	return memcmp(wordA, wordB, strlen(wordA));
 }
 
 // Find word and return word position
@@ -333,7 +260,7 @@ Vector searchForWords(String searchTerm, Vector *pVector){
 	for (int i = 0; i < vectorSize(pVector); i++){
 		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
 		if (strstr(wordInVector, searchTerm) != NULL){
-			vectorAppend(&pCompareVector, vectorGet(pVector, i), (strlen(vectorGet(pVector, i)) + 1));
+			vectorAppend(&pCompareVector, &i, sizeof(int));
 		}
 	}
 	return pCompareVector;
@@ -353,36 +280,12 @@ int deleteWord(int index, Vector *pVector){
 	return 1;
 }
 
-// Antagligen onÃ¶dig, bÃ¤ttre och kÃ¶ra deleteWord() i en loop
+// Antagligen onödig, bättre och köra deleteWord() i en loop
 void deleteManyWords(int index, int numWords, Vector *pVector){
 	for (int i = index; i < (index + numWords); i++){
 		vectorRemove(pVector, index);
 	}
 }
-
-
-//int findPosForWord(String word, Vector *pVector)
-//{
-	//char wordCpy = strcpy(wordCpy, word);
-
-	//searchForWords(wordCpy, pVector);
-
-	//int posForWord = strcmp(wordCpy, &pVector);
-
-
-
-	//return posForWord;
-//}
-
-
-
-
-
-
-
-
-
-
 
 // TODO: Check if word already exist
 int addWord(String word, int index, Vector *pVector){
@@ -550,6 +453,7 @@ void readInput(String pCommand, String pValue){
 
 int switchCommand(String command, String value, Vector *pVector) {
 	Vector pCompareVector;
+	FILE *fileToLoad;
 	FILE *fileToSave;
 	int number;
 	switch (readCommand(command)){
@@ -559,7 +463,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 
 	case (add) :
-		addWord(value, findPosForWord, pVector); /// hårdkodat noll, den ska bytas ut mot ett index där ordet passar in.
+		addWord(value, 2, pVector);
 		return 1;
 
 	case (delete) :
@@ -603,7 +507,9 @@ int switchCommand(String command, String value, Vector *pVector) {
 	case (find) :
 		pCompareVector = searchForWords(value, pVector);
 		if (vectorSize(&pCompareVector) > 0) {
-			printWordsInVector(&pCompareVector, 0, vectorSize(&pCompareVector));
+			for (int i = 0; i < vectorSize(&pCompareVector); i++){
+                printf("\n%d\t%s", vectorGet(&pCompareVector, i), vectorGet(pVector, vectorGet(&pCompareVector, i)));
+            }
 		}
 		if (vectorSize(&pCompareVector) == -1) {
 			printf("The word doesnt exist.");
@@ -618,27 +524,29 @@ int switchCommand(String command, String value, Vector *pVector) {
 
 	case (load) :
 		vectorClear(pVector);
-		FILE *fileToLoad = openFile(value, "r");
-		if (fileToLoad)
-		{
-			storeWordsFromFile(fileToLoad, pVector);
-			closeFile(fileToLoad);
+		if (!(fileToLoad = openFile(value, "r"))){
+            return -1;
 		}
+
+        storeWordsFromFile(fileToLoad, pVector);
+        closeFile(fileToLoad);
 		return 1;
 
 	case (save) :
-		fileToSave = openFile(value, "w");
+		if (!(fileToSave = openFile(value, "w"))){
+            return -1;
+		}
 		switch (saveWordsToFile(fileToSave, pVector))
 		{
-		case 1:
-			break;
-		case -1:
-			printf("You have nothing to save.");
-			break;
-		case -2:
-			break;
-		default:
-			break;
+			case 1:
+				break;
+			case -1:
+				printf("You have nothing to save.");
+				break;
+			case -2:
+				break;
+			default:
+				break;
 		}
 		closeFile(fileToSave);
 		return 1;
@@ -655,8 +563,11 @@ int switchCommand(String command, String value, Vector *pVector) {
 //###########################################################//
 int main()
 {
-	printf("WordMagic ver 0.1\n");
-	printf("To get started, type help.");
+    if(!setlocale(LC_ALL, "")) {
+        printf("error while setting locale\n");
+    }
+	printf("WordMagic version <0.1>\n");
+	printf("To get started, type help.\n");
 	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
 	Vector container;
 	vectorInit(&container);
