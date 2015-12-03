@@ -168,6 +168,18 @@ int FindChar(char ch, String text, int start);
  * found.
  */
 
+ int FindCharFromRight(char ch, String text, int start);
+
+/*
+ * Function: FindString
+ * Usage: p = FindString(str, text, start);
+ * ----------------------------------------
+ * Beginning at position start in the String text, this
+ * function searches for the String str and returns the
+ * first index at which it appears or -1 if no match is
+ * found.
+ */
+
 int FindString(String str, String text, int start);
 
 /* Section 4 -- Case-conversion functions */
