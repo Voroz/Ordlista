@@ -161,7 +161,6 @@ void vectorClear(Vector *pVector){
 }
 
 //###########################################################//
-<<<<<<< HEAD
 typedef enum errors{
 	general,
 	fileOpen,
@@ -196,7 +195,6 @@ void userError(ErrorCode err, String s, ...){
 }
 
 //###########################################################//
-=======
 char convertToSweChar(int input){
     //å
     if (input == -122){
@@ -231,7 +229,6 @@ void convertToSweString(String input){
     }
 }
 
->>>>>>> 6b7e99c0dbab3616c0f00c3d422681de1a387c30
 String findExtension(String filename){
 	return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
 }
@@ -296,7 +293,6 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 }
 
 int findPosForWord(String word, Vector *pVector){
-<<<<<<< HEAD
 	String wordInVector = "";
 	int i;
 	for (i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
@@ -308,19 +304,6 @@ int findPosForWord(String word, Vector *pVector){
 		FreeBlock(wordInVector);
 	}
 	return i;
-=======
-    String wordInVector = "";
-    int i;
-    for (i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
-        wordInVector = ConvertToLowerCase(vectorGet(pVector, i)); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
-        if (StringCompare(word, wordInVector) < 0){
-            FreeBlock(wordInVector);
-            return i;
-        }
-        FreeBlock(wordInVector);
-    }
-    return i;
->>>>>>> 6b7e99c0dbab3616c0f00c3d422681de1a387c30
 }
 
 
