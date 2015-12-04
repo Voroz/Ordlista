@@ -174,7 +174,7 @@ int appendFileExtension(String filename, String extension){
 	//Exit if there's already an extension
 	if (findExtension(filename)[0] == '.'){
 		#ifdef DEBUG_ON
-			printf("'appendFileExtension' - File already has an extension.");
+			printf("'appendFileExtension' - File already has an extension.\n");
 		#endif
 		return -1;
 	}
@@ -233,13 +233,12 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 
 int findPosForWord(String word, Vector *pVector){
 	for (int i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
-		String wordInVector = ConvertToLowerCase(pVector->data[i]); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
-		int wordPosIs = StringCompare(word, wordInVector);
-		if (wordPosIs > 0){
+		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i)); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
+		if (StringCompare(word, wordInVector) > 0){
 			FreeBlock(wordInVector);
 			continue;
 		}
-		else if (wordPosIs < 0){
+		if (StringCompare(word, wordInVector) < 0){
 			FreeBlock(wordInVector);
 			return i;
 		}
@@ -304,7 +303,17 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 	}
 }
 
-// TODO: Check if word already exist
+int StringEqualNotCaseSens(String wordA, String wordB){
+	String wordALower = ConvertToLowerCase(wordA);
+	String wordBLower = ConvertToLowerCase(wordB);
+
+	bool result = StringEqual(wordALower, wordBLower);
+	FreeBlock(wordALower);
+	FreeBlock(wordBLower);
+	return result;
+}
+
+// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
 // TODO: Make first char upper case
 int addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
@@ -317,6 +326,14 @@ int addWord(String word, int index, Vector *pVector){
 	if (StringToInteger(word) != -1){
 		//Error: can not add number as a word
 		return -2;
+	}
+	// Check if wordToEdit is empty string
+	if (strlen(word) <= 0){
+		return -3;
+	}
+	// Check if word exist
+	if (StringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
+		return -4;
 	}
 	// If we're adding word to back of vector
 	if (index == vectorSize(pVector)){
@@ -331,7 +348,7 @@ int addWord(String word, int index, Vector *pVector){
 	return 1;
 }
 
-// TODO: Check if word already exist
+// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
 int editWord(int index, Vector *pVector){
 	String wordToEdit = vectorGet(pVector, index);
 	// Check if out of bounds
@@ -343,9 +360,11 @@ int editWord(int index, Vector *pVector){
 	}
 	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
 	wordToEdit = GetLine();
-	// TODO: Check if wordToEdit is empty string and dont save it and return -2
-	if (wordToEdit == '\0'){
-		return -2;
+	// Check if word exist
+	for (int i = 0; i < pVector->size; i++){
+		if (StringEqualNotCaseSens(wordToEdit, vectorGet(pVector, i))){
+			return -3;
+		}
 	}
 	vectorSet(pVector, index, wordToEdit);
 	return 1;
@@ -439,14 +458,14 @@ int readCommand(String command){
 }
 
 void readInput(String command, String value){
-	printf("\n\n%c", '>');
-
-	String userInput,
+	String userInputRaw,
+		userInput,
 		commandInput,
 		valueInput;
 
-	userInput = GetLine();
-	userInput = ConvertToLowerCase(userInput);
+	userInputRaw = GetLine();
+	userInput = ConvertToLowerCase(userInputRaw);
+	free(userInputRaw);
 
 	int spaceChar = (FindChar(' ', userInput, 0));
 	if (spaceChar == -1){
@@ -585,17 +604,19 @@ int main()
 	if (!setlocale(LC_ALL, "")) {
 		printf("error while setting locale\n");
 	}
-	printf("WordMagic version <0.1>\n");
-	printf("To get started, type help.\n");
 
 	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
 	Vector container;
 	vectorInit(&container);
 
-	//printf("WordMagic ver 0.1\n");
-	//printf("To get started, type help.");
+	FILE *ordlista = openFile("ordlista.txt", "r");
+	storeWordsFromFile(ordlista, &container);
+
+	printf("WordMagic ver 0.1\n");
+	printf("To get started, type help.");
 	int check = 1;
 	while (check){
+		printf("\n\n%c", '>');
 		readInput(command, value);
 		check = switchCommand(command, value, &container);
 	}
