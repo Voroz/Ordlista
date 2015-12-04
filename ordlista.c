@@ -140,7 +140,7 @@ void vectorRemove(Vector *pVector, int index){
 	for (int i = index; i < (pVector->size - 1); i++){
 		vectorSet(pVector, i, pVector->data[i + 1]);
 	}
-	// Decrement vector->size and set last value to NULL 
+	// Decrement vector->size and set last value to NULL
 	vectorSet(pVector, (pVector->size - 1), NULL);
 	pVector->size--;
 
@@ -161,6 +161,7 @@ void vectorClear(Vector *pVector){
 }
 
 //###########################################################//
+<<<<<<< HEAD
 typedef enum errors{
 	general,
 	fileOpen,
@@ -195,6 +196,42 @@ void userError(ErrorCode err, String s, ...){
 }
 
 //###########################################################//
+=======
+char convertToSweChar(int input){
+    //å
+    if (input == -122){
+        return -27;
+    }
+    //ä
+    if (input == -124){
+        return -28;
+    }
+    //ö
+    if (input == -108){
+        return -10;
+    }
+    //Å
+    if (input == -113){
+        return -59;
+    }
+    //Ä
+    if (input == -98){
+        return -60;
+    }
+    //Ö
+    if (input == -103){
+        return -42;
+    }
+    return;
+}
+
+void convertToSweString(String input){
+    for (int i = 0; i < strlen(input); i++){
+        input[i] = convertToSweChar(input[i]);
+    }
+}
+
+>>>>>>> 6b7e99c0dbab3616c0f00c3d422681de1a387c30
 String findExtension(String filename){
 	return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
 }
@@ -210,7 +247,6 @@ void appendFileExtension(String filename, String extension){
 	strcat(filename, extension);
 }
 
-// TODO: change to work with all fileextensions
 FILE *openFile(String filename, String accessMode){
 	FILE *file;
 	// Add txt extension to 'filename' if not already there
@@ -260,6 +296,7 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 }
 
 int findPosForWord(String word, Vector *pVector){
+<<<<<<< HEAD
 	String wordInVector = "";
 	int i;
 	for (i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
@@ -271,6 +308,19 @@ int findPosForWord(String word, Vector *pVector){
 		FreeBlock(wordInVector);
 	}
 	return i;
+=======
+    String wordInVector = "";
+    int i;
+    for (i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
+        wordInVector = ConvertToLowerCase(vectorGet(pVector, i)); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
+        if (StringCompare(word, wordInVector) < 0){
+            FreeBlock(wordInVector);
+            return i;
+        }
+        FreeBlock(wordInVector);
+    }
+    return i;
+>>>>>>> 6b7e99c0dbab3616c0f00c3d422681de1a387c30
 }
 
 
@@ -483,6 +533,7 @@ int readCommand(String command){
 	return 0;
 }
 
+//TODO: Comment this code.
 void readInput(String command, String value){
 	String userInputRaw,
 		userInput,
@@ -511,6 +562,7 @@ void readInput(String command, String value){
 }
 
 int switchCommand(String command, String value, Vector *pVector) {
+    convertToSweString(value);
 	Vector pCompareVector;
 	FILE *fileToLoad;
 	FILE *fileToSave;
@@ -548,7 +600,7 @@ int switchCommand(String command, String value, Vector *pVector) {
 		else{
 			result = editWord(getWordPos(value, pVector), pVector);
 		}
-		
+
 		switch (result)
 		{
 		case 1:
@@ -630,7 +682,6 @@ int main()
 	if (!setlocale(LC_ALL, "")) {
 		printf("error while setting locale\n");
 	}
-
 	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
 	Vector container;
 	vectorInit(&container);
