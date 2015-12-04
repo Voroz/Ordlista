@@ -6,6 +6,7 @@
 #include <String.h>
 #include <ctype.h>
 #include <locale.h>
+#include <stdarg.h>
 #include "genlib.h"
 #include "random.h"
 #include "simpio.h"
@@ -83,16 +84,14 @@ void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
 	return;
 }
 
-int vectorSet(Vector *pVector, int index, void* *value){
+void vectorSet(Vector *pVector, int index, void* *value){
 	if (index >= pVector->size || index < 0){
 		#ifdef DEBUG_ON
 			printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
-		return -1;
 	}
 	// Set the value at the desired index
 	pVector->data[index] = value;
-	return 1;
 }
 
 void* vectorGet(Vector *pVector, int index){
@@ -107,13 +106,12 @@ void* vectorGet(Vector *pVector, int index){
 //
 // Moves all values one step higer from index position and inserts the new value at index
 //
-int vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
+void vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
 		#ifdef DEBUG_ON
 			printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
-		return -1;
 	}
 	// Make the vector one element larger to make room for the new value
 	vectorAppend(pVector, pVector->data[pVector->size - 1], strlen(pVector->data[pVector->size - 1]) + 1);
@@ -127,16 +125,14 @@ int vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 
 	// Save the new adress in the vector
 	vectorSet(pVector, index, ptr);
-	return 1;
 }
 
-int vectorRemove(Vector *pVector, int index){
+void vectorRemove(Vector *pVector, int index){
 	// Check if out of bounds
 	if (index < 0 || index >= pVector->size){
 		#ifdef DEBUG_ON
 			printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
-		return -1;
 	}
 	// Remove value att index position
 	vectorFreeValue(pVector->data[index]);
@@ -148,9 +144,8 @@ int vectorRemove(Vector *pVector, int index){
 	vectorSet(pVector, (pVector->size - 1), NULL);
 	pVector->size--;
 
-	// Check usage and halves vector is usage is <= 50%
+	// Check usage and halves vector if usage is <= 50%
 	vectorHalfCapacityIfNotUsed(pVector);
-	return 1;
 }
 
 void vectorFree(Vector *pVector){
@@ -166,20 +161,53 @@ void vectorClear(Vector *pVector){
 }
 
 //###########################################################//
+typedef enum errors{
+	general,
+	fileOpen,
+	saveEmpty,
+	noWordFound,
+	nullWord,
+	alreadyExist,
+	notAllowedChar
+}ErrorCode;
+
+void userError(ErrorCode err, String s, ...){
+
+	va_list args;
+	va_start(args, s);
+
+	switch (err)
+	{
+	case (general) :
+		printf("%s", "Something went wrong");
+		break;
+	case (fileOpen) :
+		printf("Error opening %s\n", s);
+		break;
+	default:
+		break;
+	}
+
+	vfprintf(stdout, "%s", args);
+
+	va_end(args);
+
+}
+
+//###########################################################//
 String findExtension(String filename){
 	return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
 }
 
-int appendFileExtension(String filename, String extension){
+void appendFileExtension(String filename, String extension){
 	//Exit if there's already an extension
 	if (findExtension(filename)[0] == '.'){
 		#ifdef DEBUG_ON
 			printf("'appendFileExtension' - File already has an extension.\n");
 		#endif
-		return -1;
+		return;
 	}
 	strcat(filename, extension);
-	return 1;
 }
 
 // TODO: change to work with all fileextensions
@@ -190,8 +218,8 @@ FILE *openFile(String filename, String accessMode){
 
 	// Open file and check for errors
 	if (!(file = fopen(filename, accessMode))){
-		printf("Error opening %s\n", filename); // TODO: Move error message to scope of call, (switch command)
-		return 0;
+		userError(fileOpen, filename, "hej", "detta gick inte");
+		return NULL;
 	}
 	return file;
 }
@@ -232,19 +260,17 @@ int saveWordsToFile(FILE *file, Vector *pVector){
 }
 
 int findPosForWord(String word, Vector *pVector){
-	for (int i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
-		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i)); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
-		if (StringCompare(word, wordInVector) > 0){
-			FreeBlock(wordInVector);
-			continue;
-		}
+	String wordInVector = "";
+	int i;
+	for (i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
+		wordInVector = ConvertToLowerCase(vectorGet(pVector, i)); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
 		if (StringCompare(word, wordInVector) < 0){
 			FreeBlock(wordInVector);
 			return i;
 		}
 		FreeBlock(wordInVector);
 	}
-	return -3;
+	return i;
 }
 
 
@@ -258,8 +284,8 @@ int getWordPos(String word, Vector *pVector){
 	}
 	for (int i = 0; i < vectorSize(pVector); i++){
 		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
-		// Check if strings match with memcmp
-		if (memcmp(word, wordInVector, strlen(wordInVector)) == 0){
+		// Check if strings match
+		if (StringEqual(word, wordInVector)){
 			// i = position
 			return i;
 		}
@@ -303,7 +329,7 @@ void deleteManyWords(int index, int numWords, Vector *pVector){
 	}
 }
 
-int StringEqualNotCaseSens(String wordA, String wordB){
+bool StringEqualNotCaseSens(String wordA, String wordB){
 	String wordALower = ConvertToLowerCase(wordA);
 	String wordBLower = ConvertToLowerCase(wordB);
 
@@ -327,21 +353,21 @@ int addWord(String word, int index, Vector *pVector){
 		//Error: can not add number as a word
 		return -2;
 	}
-	// Check if wordToEdit is empty string
+	// Check if word is empty string
 	if (strlen(word) <= 0){
 		return -3;
 	}
 	// Check if word exist
-	if (StringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
+	if (index > 0 && StringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
 		return -4;
 	}
+
 	// If we're adding word to back of vector
 	if (index == vectorSize(pVector)){
 		vectorAppend(pVector, word, (strlen(word) + 1));
 		printf("The word has been added.\n");
 		return 1;
 	}
-
 	// If we're inserting word
 	vectorInsert(pVector, index, word, (strlen(word) + 1));
 	printf("The word has been added.\n");
@@ -411,7 +437,7 @@ int printHelpInfo(){
 }
 
 //###########################################################//
-typedef enum {
+enum commands{
 	help = 1,
 	add,
 	edit,
