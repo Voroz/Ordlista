@@ -2,28 +2,29 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 #include <String.h>
 #include <ctype.h>
 #include <locale.h>
 #include <stdarg.h>
+#include <setjmp.h>
 #include "genlib.h"
 #include "random.h"
 #include "simpio.h"
 #include "strlib.h"
 
-#define VECTOR_GET(vec, type, id) *((type) vectorGet(&vec, id))
-
 #define VECTOR_INITIAL_CAPACITY 10
 #define MAX_WORD_LENGTH 100
 #define DEBUG_ON
+
+jmp_buf env;
+
+int changes = 0;
 
 typedef struct{
 	int size;		// Slots used so far
 	int capacity;	// Total available slots
 	void **data;	// Array of data we're storing
 } Vector;
-
 
 //###########################################################//
 void vectorInit(Vector *pVector){
@@ -67,7 +68,7 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 		void **newMemory = realloc(pVector->data, sizeof(void*)* (pVector->capacity / 2));
 		if (newMemory){
 			#ifdef DEBUG_ON
-				printf("Vector resize: %d to %d\n", pVector->capacity, pVector->size);
+				printf("Vector resize: %d to %d\n", pVector->capacity, pVector->capacity / 2);
 			#endif
 			pVector->data = newMemory;
 			pVector->capacity /= 2;
@@ -113,8 +114,11 @@ void vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 			printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
+	// TODO: Try to remove StringLength
 	// Make the vector one element larger to make room for the new value
-	vectorAppend(pVector, pVector->data[pVector->size - 1], strlen(pVector->data[pVector->size - 1]) + 1);
+	pVector->size++;
+	vectorDoubleCapacityIfFull(pVector);
+	//vectorAppend(pVector, pVector->data[pVector->size - 1], StringLength(pVector->data[pVector->size - 1]) + 1);
 
 	// Move all values whos index is larger than 'index' one higher (element 5 becomes 4, 4 becomes 3, and so on)
 	for (int i = (pVector->size - 1); i > index; i--){
@@ -134,6 +138,9 @@ void vectorRemove(Vector *pVector, int index){
 			printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
+	// Check usage and halves vector if usage is <= 50%
+	vectorHalfCapacityIfNotUsed(pVector);
+
 	// Remove value att index position
 	vectorFreeValue(pVector->data[index]);
 	// Move all values whos index is larger than 'index' one lower (element 4 becomes 5, 5 becomes 6, and so on)
@@ -143,9 +150,6 @@ void vectorRemove(Vector *pVector, int index){
 	// Decrement vector->size and set last value to NULL
 	vectorSet(pVector, (pVector->size - 1), NULL);
 	pVector->size--;
-
-	// Check usage and halves vector if usage is <= 50%
-	vectorHalfCapacityIfNotUsed(pVector);
 }
 
 void vectorFree(Vector *pVector){
@@ -166,34 +170,113 @@ typedef enum errors{
 	fileOpen,
 	saveEmpty,
 	noWordFound,
+	noSearchResult,
 	nullWord,
 	alreadyExist,
-	notAllowedChar
+	notAllowedChar,
+	outOfBounds,
+	noFilename,
+	toLongInput,
+	emptyList,
+	unsavedChanges,
+	unknownCommand
 }ErrorCode;
 
-void userError(ErrorCode err, String s, ...){
-
+void userError(ErrorCode err, ...){
 	va_list args;
-	va_start(args, s);
+	va_start(args, err);
 
-	switch (err)
-	{
+	switch (err){
 	case (general) :
-		printf("%s", "Something went wrong");
+		fprintf(stderr, "\nSomething went wrong");
 		break;
 	case (fileOpen) :
-		printf("Error opening %s\n", s);
+		vfprintf(stderr, "\nError opening file %s, does it exist?", args);
+		longjmp(env, 1);
+	case (saveEmpty) :
+		fprintf(stderr, "\nCan't save empty list to file");
+		longjmp(env, 1);
+	case (noWordFound) :
+		vfprintf(stderr, "\nCan't find the word \"%s\" that you're looking for", args);
+		longjmp(env, 1);
+	case (noSearchResult) :
+		vfprintf(stderr, "\nNo match searching for \"%s\"", args);
+		longjmp(env, 1);
+	case (nullWord) :
+		fprintf(stderr, "\nCan't function with an empty word\n");
+		longjmp(env, 1);
+	case (alreadyExist) :
+		vfprintf(stderr, "\nThe word \"%s\" already exist in the list", args);
+		longjmp(env, 1);
+	case (notAllowedChar) :
+		vfprintf(stderr, "\nThe word can't contain the character '%s'", args);
+		longjmp(env, 1);
+	case (outOfBounds) :
+		vfprintf(stderr, "\nThe index %d is out of bounds for your current list of size %d", args);
+		longjmp(env, 1);
+	case (noFilename) :
+		fprintf(stderr, "\nNo filename specified");
+		longjmp(env, 1);
+	case (toLongInput) :
+		fprintf(stderr, "\nInput is to long");
+		longjmp(env, 1);
+	case (emptyList) :
+		vfprintf(stderr, "\nThe list is empty", args);
+		break;
+	case (unsavedChanges) :
+		vfprintf(stderr, "\nYou have changes that are not saved \n- Type exit to discard changes \n- Press enter to return to program", args);
+		break;
+	case (unknownCommand) :
+		vfprintf(stderr, "\nThe command \"%s\" is unknowm", args);
 		break;
 	default:
 		break;
 	}
-
-	vfprintf(stdout, "%s", args);
-
 	va_end(args);
-
 }
 
+typedef enum succes{
+	wordAdded,
+	wordDelete,
+	wordEdit,
+	loadFile,
+	saveFile,
+	clearList,
+	continueProg
+}SuccesCode;
+
+void userSucces(SuccesCode succes, ...){
+	va_list args;
+	va_start(args, succes);
+
+	switch (succes)
+	{
+	case (wordAdded) :
+		vfprintf(stdout, "\nThe word \"%s\" has been added", args);
+		break;
+	case (wordDelete) :
+		vfprintf(stdout, "\nThe word \"%s\" has been deleted", args);
+		break;
+	case (wordEdit) :
+		vfprintf(stdout, "\nThe word \"%s\" has been changed to \"%s\"", args);
+		break;
+	case (loadFile) :
+		vfprintf(stdout, "\nLoaded the file \"%s\"", args);
+		break;
+	case (saveFile) :
+		vfprintf(stdout, "\nSaved the list to file \"%s\"", args);
+		break;
+	case (clearList) :
+		vfprintf(stdout, "\nCleared the list", args);
+		break;
+	case (continueProg) :
+		vfprintf(stdout, "\nGoing back to program", args);
+		break;
+	default:
+		break;
+	}
+	va_end(args);
+}
 //###########################################################//
 char convertToSweChar(int input){
     //å
@@ -220,149 +303,20 @@ char convertToSweChar(int input){
     if (input == -103){
         return -42;
     }
-    return;
+    return input;
 }
 
 void convertToSweString(String input){
-    for (int i = 0; i < strlen(input); i++){
+	for (int i = 0; i < StringLength(input); i++){
         input[i] = convertToSweChar(input[i]);
     }
 }
 
-String findExtension(String filename){
-	return SubString(filename, FindCharFromRight('.', filename, 0), strlen(filename));
+bool stringIsEmpty(String s){
+	return (StringLength(s) <= 0);
 }
 
-void appendFileExtension(String filename, String extension){
-	//Exit if there's already an extension
-	if (findExtension(filename)[0] == '.'){
-		#ifdef DEBUG_ON
-			printf("'appendFileExtension' - File already has an extension.\n");
-		#endif
-		return;
-	}
-	strcat(filename, extension);
-}
-
-FILE *openFile(String filename, String accessMode){
-	FILE *file;
-	// Add txt extension to 'filename' if not already there
-	appendFileExtension(filename, ".txt");
-
-	// Open file and check for errors
-	if (!(file = fopen(filename, accessMode))){
-		userError(fileOpen, filename, "hej", "detta gick inte");
-		return NULL;
-	}
-	return file;
-}
-
-void closeFile(FILE *file){
-	fclose(file);
-}
-
-int storeWordsFromFile(FILE *file, Vector *pVector){
-	String word;
-
-	// Temporary memory
-	word = GetBlock(MAX_WORD_LENGTH);
-	// Read word into temporary memory
-	for (int i = 0; fscanf(file, "%s\n", word) != EOF; i++){
-		// Append word to vector
-		vectorAppend(pVector, word, (strlen(word) + 1));
-	}
-	free(word);
-	return 1;
-}
-
-int saveWordsToFile(FILE *file, Vector *pVector){
-	// Save words to file
-	if (vectorSize(pVector) != 0){
-		for (int i = 0; i < vectorSize(pVector) - 1; i++){
-			fprintf(file, "%s\n", vectorGet(pVector, i));
-		}
-		fprintf(file, "%s", vectorGet(pVector, vectorSize(pVector) - 1));
-	}
-	else{
-		#ifdef DEBUG_ON
-			printf("'saveWordsToFile' - Vector doesn't contain anything\n");
-		#endif
-		return -1;
-	}
-	return 1;
-}
-
-int findPosForWord(String word, Vector *pVector){
-	String wordInVector = "";
-	int i;
-	for (i = 0; i < pVector->size; i++){       // (->size används för att for-loopen ska veta att det är antalet ord i pVectorn som ska loopas igenom. dvs 87 stycken.)
-		wordInVector = ConvertToLowerCase(vectorGet(pVector, i)); // (->data[i] används för att det är ordet på det indexet som vi ska jämföra med.)
-		if (StringCompare(word, wordInVector) < 0){
-			FreeBlock(wordInVector);
-			return i;
-		}
-		FreeBlock(wordInVector);
-	}
-	return i;
-}
-
-
-// Find word and return word position
-int getWordPos(String word, Vector *pVector){
-	if (strlen(word) <= 0){
-		#ifdef DEBUG_ON
-			printf("findPosForWord: Word to search for is empty string\n");
-		#endif
-		return -2;
-	}
-	for (int i = 0; i < vectorSize(pVector); i++){
-		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
-		// Check if strings match
-		if (StringEqual(word, wordInVector)){
-			// i = position
-			return i;
-		}
-	}
-	return -1;
-}
-
-
-Vector searchForWords(String searchTerm, Vector *pVector){
-
-	Vector pCompareVector;
-	vectorInit(&pCompareVector);
-
-	for (int i = 0; i < vectorSize(pVector); i++){
-		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
-		if (strstr(wordInVector, searchTerm) != NULL){
-			vectorAppend(&pCompareVector, &i, sizeof(int));
-		}
-	}
-	return pCompareVector;
-}
-
-int deleteWord(int index, Vector *pVector){
-	// Check if out of bounds
-	if (index < 0 || index >= vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
-		return -1;
-	}
-
-	vectorRemove(pVector, index);
-	printf("The word has been deleted.\n");
-	return 1;
-}
-
-// Antagligen onödig, bättre och köra deleteWord() i en loop
-void deleteManyWords(int index, int numWords, Vector *pVector){
-	for (int i = index; i < (index + numWords); i++){
-		vectorRemove(pVector, index);
-	}
-}
-
-bool StringEqualNotCaseSens(String wordA, String wordB){
+bool stringEqualNotCaseSens(String wordA, String wordB){
 	String wordALower = ConvertToLowerCase(wordA);
 	String wordBLower = ConvertToLowerCase(wordB);
 
@@ -372,101 +326,302 @@ bool StringEqualNotCaseSens(String wordA, String wordB){
 	return result;
 }
 
-// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
-// TODO: Make first char upper case
-int addWord(String word, int index, Vector *pVector){
-	// Check if out of bounds
-	if (index < 0 || index > vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
-		return -1;
-	}
-	if (StringToInteger(word) != -1){
-		//Error: can not add number as a word
-		return -2;
-	}
-	// Check if word is empty string
-	if (strlen(word) <= 0){
-		return -3;
-	}
-	// Check if word exist
-	if (index > 0 && StringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
-		return -4;
-	}
-
-	// If we're adding word to back of vector
-	if (index == vectorSize(pVector)){
-		vectorAppend(pVector, word, (strlen(word) + 1));
-		printf("The word has been added.\n");
-		return 1;
-	}
-	// If we're inserting word
-	vectorInsert(pVector, index, word, (strlen(word) + 1));
-	printf("The word has been added.\n");
-	return 1;
+String findExtension(String filename){
+	return SubString(filename, FindCharFromRight('.', filename, 0), StringLength(filename));
 }
 
-// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
-int editWord(int index, Vector *pVector){
-	String wordToEdit = vectorGet(pVector, index);
-	// Check if out of bounds
-	if (index < 0 || index >= vectorSize(pVector)){
+// TODO: Try to make the memory situation better
+// 'strcat' destination needs to be large enough to hold the new string
+// Problem starts in 'openFile' with 'appendFileExtension'
+void appendFileExtension(String *filename, String extension){
+	int stringSize = StringLength(*filename) + StringLength(extension) + 2;
+	String newFilename = GetBlock(stringSize);
+	strcpy(newFilename, *filename);
+	*filename = newFilename;
+
+	String ext = findExtension(*filename);
+	// Return if there's already an extension
+	if (ext[0] == '.'){
 		#ifdef DEBUG_ON
-			printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+			printf("'appendFileExtension' - File already has an extension.\n");
 		#endif
-		return -1;
+		FreeBlock(ext);
+		return;
 	}
-	printf("The word you are about to edit: %s:\n", vectorGet(pVector, index));
-	wordToEdit = GetLine();
-	// Check if word exist
-	for (int i = 0; i < pVector->size; i++){
-		if (StringEqualNotCaseSens(wordToEdit, vectorGet(pVector, i))){
-			return -3;
-		}
-	}
-	vectorSet(pVector, index, wordToEdit);
-	return 1;
+	FreeBlock(ext);
+	strncat(*filename, ".", 1);
+	strncat(*filename, extension, stringSize);
 }
 
+FILE *openFile(String *filename, String accessMode){
+	FILE *file;
+	if (stringIsEmpty(*filename) || *filename[0] == '.'){
+		userError(noFilename);
+	}
+	// Add txt extension to 'filename' if not already there
+	appendFileExtension(filename, "txt");
+
+	// Open file and check for errors
+	if (!(file = fopen(*filename, accessMode))){
+		userError(fileOpen, *filename, *filename);
+	}
+	return file;
+}
+
+void closeFile(FILE *file){
+	if (fclose(file) == EOF){
+		Error("Error while closing file");
+	}
+}
+
+// Load file to vector
+void loadWordsFromFile(String filename, Vector *pVector){
+	String word;
+	FILE *fileToLoad = openFile(&filename, "r");
+
+	vectorClear(pVector);
+	// Temporary memory
+	word = GetBlock(MAX_WORD_LENGTH);
+	// Read word into temporary memory
+	for (int i = 0; fscanf(fileToLoad, "%s\n", word) != EOF; i++){
+		// Append word to vector
+		vectorAppend(pVector, word, (StringLength(word) + 1));
+	}
+	closeFile(fileToLoad);
+	FreeBlock(word);
+	userSucces(loadFile, filename);
+	FreeBlock(filename);
+	changes = 0;
+}
+
+// Save vector to file
+void saveWordsToFile(String filename, Vector *pVector){
+	if (vectorSize(pVector) <= 0){
+		#ifdef DEBUG_ON
+			printf("'saveWordsToFile' - Vector doesn't contain anything\n");
+		#endif
+		userError(saveEmpty, "");
+	}
+	FILE *fileToSave = openFile(&filename, "w");
+
+	for (int i = 0; i < vectorSize(pVector); i++){
+		fprintf(fileToSave, "%s\n", (String)vectorGet(pVector, i));
+	}
+	closeFile(fileToSave);
+	userSucces(saveFile, filename);
+	FreeBlock(filename);
+	changes = 0;
+}
+
+// Print one word to the screen with its position
 void printToScreen(String word, int position){
 	printf("\n%d\t%s", position, word);
 }
 
-int printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
+// Print all words in vector to the screen
+void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	// Check if out of bounds
 	if (startIndex < 0 || startIndex >= vectorSize(pVector)){
 		#ifdef DEBUG_ON
 			printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
 		#endif
-		return -1;
 	}
+	// Check if function would fetch data out of bounds of vector
 	if ((startIndex + numberOfWords) > vectorSize(pVector)){
 		#ifdef DEBUG_ON
 			printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
 		#endif
-		return -2;
 	}
-
+	if (vectorSize(pVector) <= 0){
+		userError(emptyList, "");
+	}
 	for (int i = startIndex; i < startIndex + numberOfWords; i++){
 		printToScreen(vectorGet(pVector, i), i);
 	}
-	return 1;
 }
 
-int printHelpInfo(){
-	printf("*******************************************************\n");
-	printf("Here are the commands available in the program.\n\n\n");
-	printf("To load a file, type:\t\tload\tex: load file\n");
-	printf("To save the file, type:\t\tsave\tex: save file\n");
-	printf("To add a word, type:\t\tadd\tex: add Giraff\n");
-	printf("To edit a word, type:\t\tedit\tex: edit Giraff\n");
-	printf("To delete a word, type:\t\tdelete\tex: delete Giraff or delete 42\n");
-	printf("To find a word, type:\t\tfind\tex: find Giraff or find a\n");
-	printf("To print the full list, type:\tprint\n");
-	printf("To exit the program, type:\texit\n\n");
-	printf("*******************************************************\n");
-	return 1;
+// Find the postition for word in lexigraphical order and return position
+int findPosForWord(String word, Vector *pVector){
+	int i;
+	word = ConvertToLowerCase(word);
+	for (i = 0; i < vectorSize(pVector); i++){
+		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
+		if (StringCompare(word, wordInVector) < 0){
+			FreeBlock(wordInVector);
+			return i;
+		}
+		FreeBlock(wordInVector);
+	}
+	return i;
+}
+
+// Find word and return word position
+int getPosForWord(String word, Vector *pVector){
+	if (stringIsEmpty(word)){
+		#ifdef DEBUG_ON
+			printf("'getPosForWord' - Word to search for is empty string\n");
+		#endif
+		userError(nullWord, word);
+	}
+	for (int i = 0; i < vectorSize(pVector); i++){
+		if (stringEqualNotCaseSens(word, vectorGet(pVector, i))){
+			return i; // i = position
+		}
+	}
+	userError(noWordFound, word);
+	return -1;
+}
+
+// Find words matching the 'searchTerm' and return a vector containing matching words
+Vector searchForWords(String searchTerm, Vector *pVector){
+	Vector resultVector;
+	vectorInit(&resultVector);
+
+	String searchTermLower = ConvertToLowerCase(searchTerm);
+
+	for (int i = 0; i < vectorSize(pVector); i++){
+		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
+		if (FindString(searchTermLower, wordInVector, 0) >= 0){
+			vectorAppend(&resultVector, vectorGet(pVector, i), (StringLength(vectorGet(pVector, i)) + 1));
+		}
+		FreeBlock(wordInVector);
+	}
+	FreeBlock(searchTermLower);
+	return resultVector;
+}
+
+// Find words matching the 'searchTerm' and prints them to the screen
+void searchVector(String searchTerm, Vector *pVector){
+	Vector wordSearch = searchForWords(searchTerm, pVector);
+
+	if (vectorSize(&wordSearch) > 0) {
+		for (int i = 0; i < vectorSize(&wordSearch); i++){
+			String wordFound = vectorGet(&wordSearch, i);
+			printToScreen(wordFound, getPosForWord(wordFound, pVector));
+		}
+		vectorFree(&wordSearch);
+	}
+	else{
+		vectorFree(&wordSearch);
+		userError(noSearchResult, searchTerm);
+	}
+}
+
+void deleteWord(int index, Vector *pVector){
+	// Check if out of bounds
+	if (index < 0 || index >= vectorSize(pVector)){
+		#ifdef DEBUG_ON
+			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
+		userError(outOfBounds, index, vectorSize(pVector));
+	}
+	userSucces(wordDelete, vectorGet(pVector, index));
+	vectorRemove(pVector, index);
+	changes++;
+}
+
+// TODO: Antagligen onödig, bättre och köra deleteWord() i en loop
+void deleteManyWords(int index, int numWords, Vector *pVector){
+	for (int i = index; i < (index + numWords); i++){
+		vectorRemove(pVector, index);
+	}
+}
+
+// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
+// TODO: Make first char upper case
+void addWord(String word, int index, Vector *pVector){
+	// Check if out of bounds
+	if (index < 0 || index > vectorSize(pVector)){
+		#ifdef DEBUG_ON
+			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
+	}
+	// Error: Can not add number as a word
+	if (StringToInteger(word) != -1){
+		userError(notAllowedChar, word);
+	}
+	// Error: Can not add empty string as a word
+	if (stringIsEmpty(word)){
+		userError(nullWord);
+	}
+	// Error: The word does already exist in list
+	if (index > 0 && stringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
+		userError(alreadyExist, word);
+	}
+	// If we're adding word last in vector
+	if (index == vectorSize(pVector)){
+		vectorAppend(pVector, word, (StringLength(word) + 1));
+		userSucces(wordAdded, word);
+		changes++;
+		return;
+	}
+	// If we're inserting word at 'index'
+	vectorInsert(pVector, index, word, (StringLength(word) + 1));
+	userSucces(wordAdded, word);
+	changes++;
+}
+
+void sortVector(Vector *pVector){
+	int position;
+	String temp;
+	for (int i = 0; i < vectorSize(pVector); i++){
+		for (int j = 0; j < vectorSize(pVector); j++)
+		{
+			if (findPosForWord(vectorGet(pVector, j), pVector) > findPosForWord(vectorGet(pVector, i), pVector)){
+				temp = vectorGet(pVector, i);
+				vectorSet(pVector, i, vectorGet(pVector, j));
+				vectorSet(pVector, j, temp);
+			}
+		}
+	}
+}
+
+// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
+void editWord(int index, Vector *pVector){
+	// Check if out of bounds
+	if (index < 0 || index >= vectorSize(pVector)){
+		#ifdef DEBUG_ON
+			printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
+		userError(outOfBounds, index, vectorSize(pVector));
+	}
+	String wordToEdit = vectorGet(pVector, index);
+	printf("Enter word to replace %s: ", (String)vectorGet(pVector, index));
+	String newWordRaw = GetLine();
+	String newWord = ConvertToLowerCase(newWordRaw);
+	FreeBlock(newWordRaw);
+	// If word exist
+	for (int i = 0; i < pVector->size; i++){
+		if (stringEqualNotCaseSens(newWord, vectorGet(pVector, i))){
+			userError(alreadyExist, newWord);
+		}
+	}
+	vectorRemove(pVector, index);
+
+	vectorInsert(pVector, findPosForWord(newWord, pVector), newWord, (StringLength(newWord) + 1));
+	//sortVector(pVector);
+	userSucces(wordEdit, wordToEdit, newWord);
+	changes++;
+}
+
+void printHelpInfo(){
+	printf("***************************************************************************\n");
+	printf(" This is a list of the commands available in the program.\n With examples of how they are used, and a description explaining what they do.\n");
+	printf(" All input are case-insensitive, that is \"LoAd fiLE\" works just as good as \"load file\".\n\n");
+	printf(" |Command| \t|Usage| \t\t|Description|\n\n");
+	printf(" load \t\tload file \t\tLoad a file into the program by specifying the filename.\n");
+	printf(" save \t\tsave file \t\tSave the list to a file by specifying the filename.\n");
+	printf(" clear \t\tclear \t\t\tClear the list in the program of all entries.\n");
+	printf(" add \t\tadd giraffe \t\tAdd a word to the list, if the word already exist you will get an error.\n");
+	printf(" edit \t\tedit giraffe \t\tEdit a word in the list by specifying the word or index of the word.\n");
+	printf("\t\tedit 42 \n");
+	printf(" delete \tdelete giraffe \t\tDelete a word by specifying the word or the index of the word.\n");
+	printf("\t\tdelete 42 \n");
+	printf(" find \t\tfind giraffe  \t\t\Find a word or part of a word, prints the result to the screen.\n");
+	printf("\t\tfind a \n");
+	printf(" print \t\tprint \t\t\tPrint the full list to the screen. \n");
+	printf(" exit \t\texit \t\t\tExit the program, discards all unsaved changes.\n\n");
+	printf("***************************************************************************");
 }
 
 //###########################################################//
@@ -479,77 +634,49 @@ enum commands{
 	print,
 	load,
 	save,
+	clear,
 	exitProg
 };
 
 int readCommand(String command){
-	if (command[0] == 'h' && StringEqual("help", command)){
+	if (StringEqual("help", command)){
 		return help;
 	}
-	if (command[0] == 'a' && StringEqual("add", command)){
+	if (StringEqual("add", command)){
 		return add;
 	}
-	if (command[0] == 'd' && StringEqual("delete", command)){
+	if (StringEqual("delete", command)){
 		return delete;
 	}
-	if (command[0] == 'f' && StringEqual("find", command)){
+	if (StringEqual("find", command)){
 		return find;
 	}
-	if (command[0] == 'p' && StringEqual("print", command)){
+	if (StringEqual("print", command)){
 		return print;
 	}
-	if (command[0] == 'l' && StringEqual("load", command)){
+	if (StringEqual("load", command)){
 		return load;
 	}
-	if (command[0] == 's' && StringEqual("save", command)){
+	if (StringEqual("save", command)){
 		return save;
 	}
-	if (command[0] == 'e'){
-		if (StringEqual("edit", command)){
-			return edit;
-		}
-		if (StringEqual("exit", command)){
-			return exitProg;
-		}
+	if (StringEqual("clear", command)){
+		return clear;
 	}
-
+	if (StringEqual("edit", command)){
+		return edit;
+	}
+	if (StringEqual("exit", command)){
+		return exitProg;
+	}
 	return 0;
 }
 
-//TODO: Comment this code.
-void readInput(String command, String value){
-	String userInputRaw,
-		userInput,
-		commandInput,
-		valueInput;
+int commandSelection(Vector *userInput, Vector *pVector) {
+	String command = vectorGet(userInput, 0);
+	String value = vectorGet(userInput, 1);
+	int position, error, userWantsToQuit;
 
-	userInputRaw = GetLine();
-	userInput = ConvertToLowerCase(userInputRaw);
-	free(userInputRaw);
-
-	int spaceChar = (FindChar(' ', userInput, 0));
-	if (spaceChar == -1){
-		commandInput = SubString(userInput, 0, StringLength(userInput));
-		value = '\0';
-	}
-	else {
-		commandInput = SubString(userInput, 0, (spaceChar - 1));
-		valueInput = SubString(userInput, (spaceChar + 1), StringLength(userInput));
-
-		memcpy(value, valueInput, (StringLength(valueInput) + 1));
-		FreeBlock(valueInput);
-	}
-	memcpy(command, commandInput, (StringLength(commandInput) + 1));
-	FreeBlock(commandInput);
-	FreeBlock(userInput);
-}
-
-int switchCommand(String command, String value, Vector *pVector) {
-    convertToSweString(value);
-	Vector pCompareVector;
-	FILE *fileToLoad;
-	FILE *fileToSave;
-	int number;
 	switch (readCommand(command)){
 
 	case (help) :
@@ -557,65 +684,43 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 
 	case (add) :
-		addWord(value, findPosForWord(value, pVector), pVector);
+		error = setjmp(env);
+		if (error == 0){
+			addWord(value, findPosForWord(value, pVector), pVector);
+		}
 		return 1;
 
 	case (delete) :
-		// Transform value to int, returns -1 if it failed
-		number = StringToInteger(value);
-		// If number is a real number
-		if (number > -1){
-			deleteWord(number, pVector);
-			return 1;
-		}
-		deleteWord(getWordPos(value, pVector), pVector);
-		return 1;
-
-		//TODO: the Error messages doesnt work properly.
-	case (edit) :
-		// Transform value to int, returns -1 if it failed
-		number = StringToInteger(value);
-		int result;
-		// If number is a real number
-		if (number > -1){
-			result = editWord(number, pVector);
-		}
-		else{
-			result = editWord(getWordPos(value, pVector), pVector);
-		}
-
-		switch (result)
-		{
-		case 1:
-			printf("The word was succsesfully changed.");
-			break;
-		case -1:
-			printf("Index is out of bounds for file.");
-			break;
-		case -2:
-			printf("The word doesn't exist.");
-			break;
-		case -3:
-			printf("The word does already exist");
-			break;
-		default:
-			break;
-		}
-		return 1;
-	case (find) :
-		pCompareVector = searchForWords(value, pVector);
-		if (vectorSize(&pCompareVector) > 0) {
-			for (int i = 0; i < vectorSize(&pCompareVector); i++){
-				int wordIndex = VECTOR_GET(pCompareVector, int*, i);
-				String word = vectorGet(pVector, wordIndex);
-				printToScreen(word, wordIndex);
+		error = setjmp(env);
+		if (error == 0){
+			position = StringToInteger(value);	// Transform value to int, returns -1 if value is not an int
+			if (position > -1){					// If position is a real number
+				deleteWord(position, pVector);
+			}
+			else{
+				deleteWord(getPosForWord(value, pVector), pVector);
 			}
 		}
-		if (vectorSize(&pCompareVector) == -1) {
-			printf("The word doesnt exist.");
-			return 1;
+		return 1;
+
+	case (edit) :
+		error = setjmp(env);
+		if (error == 0){
+			position = StringToInteger(value);	// Transform value to int, returns -1 if value is not an int
+			if (position > -1){					// If position is a real number
+				editWord(position, pVector);
+			}
+			else{
+				editWord(getPosForWord(value, pVector), pVector);
+			}
 		}
-		vectorFree(&pCompareVector);
+		return 1;
+
+	case (find) :
+		error = setjmp(env);
+		if (error == 0){
+			searchVector(value, pVector);
+		}
 		return 1;
 
 	case (print) :
@@ -623,63 +728,108 @@ int switchCommand(String command, String value, Vector *pVector) {
 		return 1;
 
 	case (load) :
-		vectorClear(pVector);
-		if (!(fileToLoad = openFile(value, "r"))){
-			return -1;
+		error = setjmp(env);
+		if (error == 0){
+			loadWordsFromFile(value, pVector);
 		}
-
-		storeWordsFromFile(fileToLoad, pVector);
-		closeFile(fileToLoad);
 		return 1;
 
 	case (save) :
-		if (!(fileToSave = openFile(value, "w"))){
-			return -1;
+		error = setjmp(env);
+		if (error == 0){
+			saveWordsToFile(value, pVector);
 		}
-				switch (saveWordsToFile(fileToSave, pVector))
-				{
-				case 1:
-					break;
-				case -1:
-					printf("You have nothing to save.");
-					break;
-				case -2:
-					break;
-				default:
-					break;
-				}
-				closeFile(fileToSave);
-				return 1;
+		return 1;
+
+	case (clear) :
+		vectorClear(pVector);
+		userSucces(clearList);
+		changes = 0;
+		return 1;
+
 	case (exitProg) :
-		return 0;
+		userWantsToQuit = checkSaveChanges(userInput);
+		if (userWantsToQuit){
+			return 0;
+		}
+		return 1;
+
 	default:
-		printf("Error: Command doesn't exist. Try again.");
-		return -1;
+		userError(unknownCommand, command);
+		return 1;
 	}
-	return -1;
 }
 
+void getInput(Vector *userInput){
+	String	userInputRaw,
+			userInputLower,
+			commandInput,
+			valueInput;
+
+	vectorClear(userInput);												// Clear vector of old input
+	printf("\n\n%c", '>');
+	userInputRaw = GetLine();											// Read input from user
+
+	if (StringLength(userInputRaw) > MAX_WORD_LENGTH){					// Make sure input is not to long (arbitrary limit)
+		userError(toLongInput, "");
+	}
+	userInputLower = ConvertToLowerCase(userInputRaw);					// Convert to lower case
+	FreeBlock(userInputRaw);
+
+	int spaceChar = (FindChar(' ', userInputLower, 0));					// Find space character to seperate command and value inputs
+	if (spaceChar == -1){												// Only command entered
+		commandInput = SubString(userInputLower, 0, StringLength(userInputLower));
+		valueInput = GetBlock(1);
+	}
+	else{																// Both command and value entered
+		commandInput = SubString(userInputLower, 0, (spaceChar - 1));
+		valueInput = SubString(userInputLower, (spaceChar + 1), StringLength(userInputLower));
+	}
+	convertToSweString(valueInput);										// Convert input to swedish characters
+
+	vectorAppend(userInput, commandInput, (StringLength(commandInput) + 1));	// Save input in vector
+	vectorAppend(userInput, valueInput, (StringLength(valueInput) + 1));
+	FreeBlock(commandInput);
+	FreeBlock(valueInput);
+}
+
+int checkSaveChanges(Vector *pVector){
+	if (changes){
+		userError(unsavedChanges, "");
+		int error = setjmp(env);
+		if (error == 0){
+			getInput(pVector);
+			if (readCommand(vectorGet(pVector, 0)) == exitProg){
+				return 1;
+			}
+		}
+		userSucces(continueProg);
+		return 0;
+	}
+}
 //###########################################################//
-int main()
+void main()
 {
 	if (!setlocale(LC_ALL, "")) {
 		printf("error while setting locale\n");
 	}
-	String command = GetBlock(MAX_WORD_LENGTH), value = GetBlock(MAX_WORD_LENGTH);
+
+	Vector userInput;
+	vectorInit(&userInput);
 	Vector container;
 	vectorInit(&container);
 
-	FILE *ordlista = openFile("ordlista.txt", "r");
-	storeWordsFromFile(ordlista, &container);
+	loadWordsFromFile("ordlista.txt", &container);
 
 	printf("WordMagic ver 0.1\n");
 	printf("To get started, type help.");
+
 	int check = 1;
 	while (check){
-		printf("\n\n%c", '>');
-		readInput(command, value);
-		check = switchCommand(command, value, &container);
+		int error = setjmp(env);
+		if (error == 0){
+			getInput(&userInput);
+			check = commandSelection(&userInput, &container);
+		}
 	}
-
-	return 0;
 }
