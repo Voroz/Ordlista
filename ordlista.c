@@ -780,6 +780,7 @@ void getInput(Vector *userInput){
 	if (spaceChar == -1){												// Only command entered
 		commandInput = SubString(userInputLower, 0, StringLength(userInputLower));
 		valueInput = GetBlock(1);
+		valueInput[0] = '\0';
 	}
 	else{																// Both command and value entered
 		commandInput = SubString(userInputLower, 0, (spaceChar - 1));
