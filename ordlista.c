@@ -244,7 +244,7 @@ void userError(ErrorCode err, ...){
 	va_end(args);
 }
 
-typedef enum succes{
+typedef enum success{
 	wordAdded,
 	wordDelete,
 	wordEdit,
@@ -368,27 +368,27 @@ String findExtension(String filename){
 // Problem starts in 'openFile' with 'appendFileExtension'
 void appendFileExtension(String *filename, String extension){
 	// Return if there's already an extension
-	if (findExtension(filename)[0] == '.'){
+	if (findExtension(*filename)[0] == '.'){
 		#ifdef DEBUG_ON
 			printf("'appendFileExtension' - File already has an extension.\n");
 		#endif
 		return;
 	}
-	*filename = Concat(filename, ".");
-	*filename = Concat(filename, extension);
+	*filename = Concat(*filename, ".");
+	*filename = Concat(*filename, extension);
 }
 
-FILE *openFile(String filename, String accessMode){
+FILE *openFile(String *filename, String accessMode){
 	FILE *file;
-	if (stringIsEmpty(filename) || filename[0] == '.'){
+	if (stringIsEmpty(*filename) || *filename[0] == '.'){
 		userError(noFilename);
 	}
 	// Add txt extension to 'filename' if not already there
-	appendFileExtension(&filename, "txt");
+	appendFileExtension(filename, "txt");
 
 	// Open file and check for errors
-	if (!(file = fopen(filename, accessMode))){
-		userError(fileOpen, filename, filename);
+	if (!(file = fopen(*filename, accessMode))){
+		userError(fileOpen, *filename, *filename);
 	}
 	return file;
 }
@@ -402,7 +402,7 @@ void closeFile(FILE *file){
 // Load file to vector
 void loadWordsFromFile(String filename, Vector *pVector){
 	String word;
-	FILE *fileToLoad = openFile(filename, "r");
+	FILE *fileToLoad = openFile(&filename, "r");
 
 	vectorClear(pVector);
 	// Temporary memory
@@ -763,7 +763,7 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 			loadWordsFromFile(value, pVector);
 		}
 		return 1;
-
+    //TODO: Automtically save to currently open file if no input.
 	case (save) :
 		error = setjmp(env);
 		if (error == 0){
