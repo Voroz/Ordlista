@@ -34,6 +34,7 @@ void vectorInit(Vector *pVector){
 
 	// Allocate memory for vector->data
 	pVector->data = GetBlock(sizeof(void*)* pVector->capacity);
+	return;
 }
 
 int vectorSize(Vector *pVector){
@@ -82,6 +83,7 @@ void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
 
 	// Append the value and increment vector->size
 	pVector->data[pVector->size++] = vectorCopyValue(value, sizeOfElem);
+	changes++;
 	return;
 }
 
@@ -93,6 +95,8 @@ void vectorSet(Vector *pVector, int index, void* *value){
 	}
 	// Set the value at the desired index
 	pVector->data[index] = value;
+	changes++;
+	return;
 }
 
 void* vectorGet(Vector *pVector, int index){
@@ -127,6 +131,8 @@ void vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 
 	// Save the new adress in the vector
 	vectorSet(pVector, index, ptr);
+	changes++;
+	return;
 }
 
 void vectorRemove(Vector *pVector, int index){
@@ -148,6 +154,8 @@ void vectorRemove(Vector *pVector, int index){
 	// Decrement vector->size and set last value to NULL
 	vectorSet(pVector, (pVector->size - 1), NULL);
 	pVector->size--;
+	changes++;
+	return;
 }
 
 void vectorFree(Vector *pVector){
@@ -155,11 +163,14 @@ void vectorFree(Vector *pVector){
 		vectorFreeValue(pVector->data[i]);
 	}
 	free(pVector->data);
+	return;
 }
 
 void vectorClear(Vector *pVector){
 	vectorFree(pVector);
 	vectorInit(pVector);
+	changes++;
+	return;
 }
 
 //###########################################################//
@@ -539,7 +550,6 @@ void deleteWord(int index, Vector *pVector){
 	}
 	userSucces(wordDelete, vectorGet(pVector, index));
 	vectorRemove(pVector, index);
-	changes++;
 }
 
 // TODO: Antagligen onödig, bättre och köra deleteWord() i en loop
@@ -562,7 +572,7 @@ void addWord(String word, int index, Vector *pVector){
 	if (!stringIsAlpha(word)){
 		userError(notAllowedChar, word);
 	}
-	// Error: 'word' can not be an empty string 
+	// Error: 'word' can not be an empty string
 	if (stringIsEmpty(word)){
 		userError(nullWord);
 	}
@@ -580,7 +590,6 @@ void addWord(String word, int index, Vector *pVector){
 	// If we're inserting word at 'index' in vector
 	vectorInsert(pVector, index, word, (StringLength(word) + 1));
 	userSucces(wordAdded, word);
-	changes++;
 }
 
 void sortVector(Vector *pVector){
@@ -607,7 +616,8 @@ void editWord(int index, Vector *pVector){
 		#endif
 		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? (vectorSize(pVector)-1) : 0));
 	}
-	String wordToEdit = vectorGet(pVector, index);
+	String wordToEdit = malloc(strlen(vectorGet(pVector, index))+1);
+	memcpy(wordToEdit, vectorGet(pVector, index), strlen(vectorGet(pVector, index))+1);
 	printf("Enter word to replace %s: ", (String)vectorGet(pVector, index));
 	String newWordRaw = GetLine();
 	String newWord = ConvertToLowerCase(newWordRaw);
@@ -618,10 +628,11 @@ void editWord(int index, Vector *pVector){
 			userError(alreadyExist, newWord);
 		}
 	}
+	vectorRemove(pVector, index);
 	vectorInsert(pVector, findPosForWord(newWord, pVector), newWord, (StringLength(newWord) + 1));
 	userSucces(wordEdit, wordToEdit, newWord);
-	vectorRemove(pVector, index);
-	changes++;
+	FreeBlock(wordToEdit);
+	return;
 }
 
 void printHelpInfo(){
@@ -731,7 +742,7 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 
 	case (edit) :
 		error = setjmp(env);
-		if (error == 0){	
+		if (error == 0){
 			if (inputIsDigit){
 				editWord(position, pVector);
 			}
@@ -769,12 +780,10 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 	case (clear) :
 		vectorClear(pVector);
 		userSucces(clearList);
-		changes = 0;
 		return 1;
 
 	case (exitProg) :
-		userWantsToQuit = checkSaveChanges(userInput);
-		if (userWantsToQuit){
+		if (checkSaveChanges(userInput)){
 			return 0;
 		}
 		return 1;
