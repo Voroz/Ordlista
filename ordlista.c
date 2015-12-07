@@ -14,11 +14,11 @@
 
 #define VECTOR_INITIAL_CAPACITY 10
 #define MAX_WORD_LENGTH 100
-#define DEBUG_ON
+//#define DEBUG_ON
 
 jmp_buf env;
 
-int changes = 0;
+int changes = 0;	// Keeps track of user changes to the vector
 
 typedef struct{
 	int size;		// Slots used so far
@@ -114,11 +114,9 @@ void vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 			printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
-	// TODO: Try to remove StringLength
 	// Make the vector one element larger to make room for the new value
 	pVector->size++;
 	vectorDoubleCapacityIfFull(pVector);
-	//vectorAppend(pVector, pVector->data[pVector->size - 1], StringLength(pVector->data[pVector->size - 1]) + 1);
 
 	// Move all values whos index is larger than 'index' one higher (element 5 becomes 4, 4 becomes 3, and so on)
 	for (int i = (pVector->size - 1); i > index; i--){
@@ -209,7 +207,7 @@ void userError(ErrorCode err, ...){
 		vfprintf(stderr, "\nThe word \"%s\" already exist in the list", args);
 		longjmp(env, 1);
 	case (notAllowedChar) :
-		vfprintf(stderr, "\nThe word can't contain the character '%s'", args);
+		vfprintf(stderr, "\nThe word \"%s\" is not valid", args);
 		longjmp(env, 1);
 	case (outOfBounds) :
 		vfprintf(stderr, "\nThe index %d is out of bounds for your current list of size %d", args);
@@ -324,6 +322,30 @@ bool stringEqualNotCaseSens(String wordA, String wordB){
 	FreeBlock(wordALower);
 	FreeBlock(wordBLower);
 	return result;
+}
+
+// Ckeck if every character is a digit
+bool stringIsNumber(String s){
+	if (*s == '-'){
+		s++;
+	}
+	while (*s){
+		if (!isdigit((unsigned char)*s++)){
+			return FALSE;
+		} }
+	return TRUE;
+}
+
+// Check if every character is a letter
+bool stringIsAlpha(String s){
+	while (*s){
+		if (*s < -1){
+			return FALSE;
+		}
+		if (!isalpha(*s++)){
+			return FALSE;
+		} }
+	return TRUE;
 }
 
 String findExtension(String filename){
@@ -513,7 +535,7 @@ void deleteWord(int index, Vector *pVector){
 		#ifdef DEBUG_ON
 			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
-		userError(outOfBounds, index, vectorSize(pVector));
+		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? vectorSize(pVector) - 1 : 0));
 	}
 	userSucces(wordDelete, vectorGet(pVector, index));
 	vectorRemove(pVector, index);
@@ -536,15 +558,15 @@ void addWord(String word, int index, Vector *pVector){
 			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
-	// Error: Can not add number as a word
-	if (StringToInteger(word) != -1){
+	// Error: 'word' can not contain symbol or number
+	if (!stringIsAlpha(word)){
 		userError(notAllowedChar, word);
 	}
-	// Error: Can not add empty string as a word
+	// Error: 'word' can not be an empty string 
 	if (stringIsEmpty(word)){
 		userError(nullWord);
 	}
-	// Error: The word does already exist in list
+	// Error: 'word' does already exist in vector
 	if (index > 0 && stringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
 		userError(alreadyExist, word);
 	}
@@ -555,7 +577,7 @@ void addWord(String word, int index, Vector *pVector){
 		changes++;
 		return;
 	}
-	// If we're inserting word at 'index'
+	// If we're inserting word at 'index' in vector
 	vectorInsert(pVector, index, word, (StringLength(word) + 1));
 	userSucces(wordAdded, word);
 	changes++;
@@ -583,24 +605,22 @@ void editWord(int index, Vector *pVector){
 		#ifdef DEBUG_ON
 			printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
-		userError(outOfBounds, index, vectorSize(pVector));
+		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? (vectorSize(pVector)-1) : 0));
 	}
 	String wordToEdit = vectorGet(pVector, index);
 	printf("Enter word to replace %s: ", (String)vectorGet(pVector, index));
 	String newWordRaw = GetLine();
 	String newWord = ConvertToLowerCase(newWordRaw);
 	FreeBlock(newWordRaw);
-	// If word exist
+	// Error: If 'newWord' exist in the list
 	for (int i = 0; i < pVector->size; i++){
 		if (stringEqualNotCaseSens(newWord, vectorGet(pVector, i))){
 			userError(alreadyExist, newWord);
 		}
 	}
-	vectorRemove(pVector, index);
-
 	vectorInsert(pVector, findPosForWord(newWord, pVector), newWord, (StringLength(newWord) + 1));
-	//sortVector(pVector);
 	userSucces(wordEdit, wordToEdit, newWord);
+	vectorRemove(pVector, index);
 	changes++;
 }
 
@@ -675,7 +695,14 @@ int readCommand(String command){
 int commandSelection(Vector *userInput, Vector *pVector) {
 	String command = vectorGet(userInput, 0);
 	String value = vectorGet(userInput, 1);
-	int position, error, userWantsToQuit;
+
+	int error, position, userWantsToQuit;
+	bool inputIsDigit = FALSE;
+
+	if (!stringIsEmpty(value) && stringIsAllNumbers(value)){
+		inputIsDigit = TRUE;
+		position = StringToInteger(value); // Make the string 'value' to an int
+	}
 
 	switch (readCommand(command)){
 
@@ -693,8 +720,7 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 	case (delete) :
 		error = setjmp(env);
 		if (error == 0){
-			position = StringToInteger(value);	// Transform value to int, returns -1 if value is not an int
-			if (position > -1){					// If position is a real number
+			if (inputIsDigit){
 				deleteWord(position, pVector);
 			}
 			else{
@@ -705,9 +731,8 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 
 	case (edit) :
 		error = setjmp(env);
-		if (error == 0){
-			position = StringToInteger(value);	// Transform value to int, returns -1 if value is not an int
-			if (position > -1){					// If position is a real number
+		if (error == 0){	
+			if (inputIsDigit){
 				editWord(position, pVector);
 			}
 			else{
@@ -820,7 +845,7 @@ void main()
 	Vector container;
 	vectorInit(&container);
 
-	loadWordsFromFile("ordlista.txt", &container);
+	//loadWordsFromFile("ordlista.txt", &container);
 
 	printf("WordMagic ver 0.1\n");
 	printf("To get started, type help.");
