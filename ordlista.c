@@ -18,18 +18,18 @@
 
 jmp_buf env;
 
-int changes = 0;	// Keeps track of user changes to the vector
-
 typedef struct{
 	int size;		// Slots used so far
 	int capacity;	// Total available slots
 	void **data;	// Array of data we're storing
+	int changes;	// Keeps track of user changes to the vector
 } Vector;
 
 //###########################################################//
 void vectorInit(Vector *pVector){
 	// Initialize size and capacity
 	pVector->size = 0;
+	pVector->changes = 0;
 	pVector->capacity = VECTOR_INITIAL_CAPACITY;
 
 	// Allocate memory for vector->data
@@ -83,7 +83,7 @@ void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
 
 	// Append the value and increment vector->size
 	pVector->data[pVector->size++] = vectorCopyValue(value, sizeOfElem);
-	changes++;
+	pVector->changes++;
 	return;
 }
 
@@ -95,7 +95,7 @@ void vectorSet(Vector *pVector, int index, void* *value){
 	}
 	// Set the value at the desired index
 	pVector->data[index] = value;
-	changes++;
+	pVector->changes++;
 	return;
 }
 
@@ -131,7 +131,7 @@ void vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 
 	// Save the new adress in the vector
 	vectorSet(pVector, index, ptr);
-	changes++;
+	pVector->changes++;
 	return;
 }
 
@@ -154,7 +154,7 @@ void vectorRemove(Vector *pVector, int index){
 	// Decrement vector->size and set last value to NULL
 	vectorSet(pVector, (pVector->size - 1), NULL);
 	pVector->size--;
-	changes++;
+	pVector->changes++;
 	return;
 }
 
@@ -169,7 +169,7 @@ void vectorFree(Vector *pVector){
 void vectorClear(Vector *pVector){
 	vectorFree(pVector);
 	vectorInit(pVector);
-	changes++;
+	pVector->changes++;
 	return;
 }
 
@@ -252,9 +252,9 @@ typedef enum succes{
 	saveFile,
 	clearList,
 	continueProg
-}SuccesCode;
+}SuccessCode;
 
-void userSucces(SuccesCode succes, ...){
+void userSuccess(SuccessCode succes, ...){
 	va_list args;
 	va_start(args, succes);
 
@@ -367,36 +367,28 @@ String findExtension(String filename){
 // 'strcat' destination needs to be large enough to hold the new string
 // Problem starts in 'openFile' with 'appendFileExtension'
 void appendFileExtension(String *filename, String extension){
-	int stringSize = StringLength(*filename) + StringLength(extension) + 2;
-	String newFilename = GetBlock(stringSize);
-	strcpy(newFilename, *filename);
-	*filename = newFilename;
-
-	String ext = findExtension(*filename);
 	// Return if there's already an extension
-	if (ext[0] == '.'){
+	if (findExtension(filename)[0] == '.'){
 		#ifdef DEBUG_ON
 			printf("'appendFileExtension' - File already has an extension.\n");
 		#endif
-		FreeBlock(ext);
 		return;
 	}
-	FreeBlock(ext);
-	strncat(*filename, ".", 1);
-	strncat(*filename, extension, stringSize);
+	*filename = Concat(filename, ".");
+	*filename = Concat(filename, extension);
 }
 
-FILE *openFile(String *filename, String accessMode){
+FILE *openFile(String filename, String accessMode){
 	FILE *file;
-	if (stringIsEmpty(*filename) || *filename[0] == '.'){
+	if (stringIsEmpty(filename) || filename[0] == '.'){
 		userError(noFilename);
 	}
 	// Add txt extension to 'filename' if not already there
-	appendFileExtension(filename, "txt");
+	appendFileExtension(&filename, "txt");
 
 	// Open file and check for errors
-	if (!(file = fopen(*filename, accessMode))){
-		userError(fileOpen, *filename, *filename);
+	if (!(file = fopen(filename, accessMode))){
+		userError(fileOpen, filename, filename);
 	}
 	return file;
 }
@@ -410,7 +402,7 @@ void closeFile(FILE *file){
 // Load file to vector
 void loadWordsFromFile(String filename, Vector *pVector){
 	String word;
-	FILE *fileToLoad = openFile(&filename, "r");
+	FILE *fileToLoad = openFile(filename, "r");
 
 	vectorClear(pVector);
 	// Temporary memory
@@ -422,9 +414,9 @@ void loadWordsFromFile(String filename, Vector *pVector){
 	}
 	closeFile(fileToLoad);
 	FreeBlock(word);
-	userSucces(loadFile, filename);
+	userSuccess(loadFile, filename);
 	FreeBlock(filename);
-	changes = 0;
+	pVector->changes = 0;
 }
 
 // Save vector to file
@@ -441,9 +433,9 @@ void saveWordsToFile(String filename, Vector *pVector){
 		fprintf(fileToSave, "%s\n", (String)vectorGet(pVector, i));
 	}
 	closeFile(fileToSave);
-	userSucces(saveFile, filename);
+	userSuccess(saveFile, filename);
 	FreeBlock(filename);
-	changes = 0;
+	pVector->changes = 0;
 }
 
 // Print one word to the screen with its position
@@ -548,7 +540,7 @@ void deleteWord(int index, Vector *pVector){
 		#endif
 		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? vectorSize(pVector) - 1 : 0));
 	}
-	userSucces(wordDelete, vectorGet(pVector, index));
+	userSuccess(wordDelete, vectorGet(pVector, index));
 	vectorRemove(pVector, index);
 }
 
@@ -580,16 +572,18 @@ void addWord(String word, int index, Vector *pVector){
 	if (index > 0 && stringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
 		userError(alreadyExist, word);
 	}
+
+	word[0] = toupper(word[0]);
 	// If we're adding word last in vector
 	if (index == vectorSize(pVector)){
 		vectorAppend(pVector, word, (StringLength(word) + 1));
-		userSucces(wordAdded, word);
-		changes++;
+		userSuccess(wordAdded, word);
 		return;
 	}
 	// If we're inserting word at 'index' in vector
 	vectorInsert(pVector, index, word, (StringLength(word) + 1));
-	userSucces(wordAdded, word);
+	userSuccess(wordAdded, word);
+	return;
 }
 
 void sortVector(Vector *pVector){
@@ -630,7 +624,7 @@ void editWord(int index, Vector *pVector){
 	}
 	vectorRemove(pVector, index);
 	vectorInsert(pVector, findPosForWord(newWord, pVector), newWord, (StringLength(newWord) + 1));
-	userSucces(wordEdit, wordToEdit, newWord);
+	userSuccess(wordEdit, wordToEdit, newWord);
 	FreeBlock(wordToEdit);
 	return;
 }
@@ -779,11 +773,11 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 
 	case (clear) :
 		vectorClear(pVector);
-		userSucces(clearList);
+		userSuccess(clearList);
 		return 1;
 
 	case (exitProg) :
-		if (checkSaveChanges(userInput)){
+		if (checkSaveChanges(pVector, userInput)){
 			return 0;
 		}
 		return 1;
@@ -828,22 +822,23 @@ void getInput(Vector *userInput){
 	FreeBlock(valueInput);
 }
 
-int checkSaveChanges(Vector *pVector){
-	if (changes){
+int checkSaveChanges(Vector *pVector, Vector *userInput){
+	if (pVector->changes){
 		userError(unsavedChanges, "");
 		int error = setjmp(env);
 		if (error == 0){
-			getInput(pVector);
-			if (readCommand(vectorGet(pVector, 0)) == exitProg){
+			getInput(userInput);
+			if (readCommand(vectorGet(userInput, 0)) == exitProg){
 				return 1;
 			}
 		}
-		userSucces(continueProg);
+		userSuccess(continueProg);
 		return 0;
 	}
+	return 1;
 }
 //###########################################################//
-void main()
+int main()
 {
 	if (!setlocale(LC_ALL, "")) {
 		printf("error while setting locale\n");
