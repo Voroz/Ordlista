@@ -699,7 +699,7 @@ int commandSelection(Vector *userInput, Vector *pVector) {
 	int error, position, userWantsToQuit;
 	bool inputIsDigit = FALSE;
 
-	if (!stringIsEmpty(value) && stringIsAllNumbers(value)){
+	if (!stringIsEmpty(value) && stringIsNumber(value)){
 		inputIsDigit = TRUE;
 		position = StringToInteger(value); // Make the string 'value' to an int
 	}
