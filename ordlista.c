@@ -615,6 +615,7 @@ void editWord(int index, Vector *pVector){
 	printf("Enter word to replace %s: ", (String)vectorGet(pVector, index));
 	String newWordRaw = GetLine();
 	String newWord = ConvertToLowerCase(newWordRaw);
+	newWord[0] = toupper(newWord[0]);
 	FreeBlock(newWordRaw);
 	// Error: If 'newWord' exist in the list
 	for (int i = 0; i < pVector->size; i++){
@@ -840,6 +841,7 @@ int checkSaveChanges(Vector *pVector, Vector *userInput){
 //###########################################################//
 int main()
 {
+	//system("MODE 114,35");
 	if (!setlocale(LC_ALL, "")) {
 		printf("error while setting locale\n");
 	}
