@@ -1,6 +1,7 @@
 #ifndef _fileio_h
 #define _fileio_h
 
+#include <stdio.h>
 #include "genlib.h"
 
 

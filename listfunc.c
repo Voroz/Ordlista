@@ -34,9 +34,9 @@ void loadWordsFromFile(String filename, Vector *pVector){
 // Save vector to file
 void saveWordsToFile(String filename, Vector *pVector){
 	if (vectorSize(pVector) <= 0){
-#ifdef DEBUG_ON
-		printf("'saveWordsToFile' - Vector doesn't contain anything\n");
-#endif
+		#ifdef DEBUG_ON
+			printf("'saveWordsToFile' - Vector doesn't contain anything\n");
+		#endif
 		userError(saveEmpty);
 	}
 	setExtension("txt");
@@ -59,15 +59,15 @@ void printToScreen(String word, int position){
 void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	// Check if out of bounds
 	if (startIndex < 0 || startIndex >= vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
+		#endif
 	}
 	// Check if function would fetch data out of bounds of vector
 	if ((startIndex + numberOfWords) > vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
+		#endif
 	}
 	if (vectorSize(pVector) <= 0){
 		userError(emptyList);
@@ -102,9 +102,9 @@ int findPosForWord(String word, Vector *pVector){
 // Find word and return word position
 int getPosForWord(String word, Vector *pVector){
 	if (stringIsEmpty(word)){
-#ifdef DEBUG_ON
-		printf("'getPosForWord' - Word to search for is empty string\n");
-#endif
+		#ifdef DEBUG_ON
+			printf("'getPosForWord' - Word to search for is empty string\n");
+		#endif
 		userError(nullWord, word);
 	}
 	for (int i = 0; i < vectorSize(pVector); i++){
@@ -155,9 +155,9 @@ void searchVector(String searchTerm, Vector *pVector){
 void deleteWord(int index, Vector *pVector){
 	// Error: if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? vectorSize(pVector) - 1 : 0));
 	}
 	userSuccess(wordDelete, vectorGet(pVector, index));
@@ -167,9 +167,9 @@ void deleteWord(int index, Vector *pVector){
 void addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index > vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 	}
 	// Error: 'word' can not contain symbol or number
 	if (!stringIsAlpha(word)){
@@ -215,9 +215,9 @@ void sortVector(Vector *pVector){
 void editWord(int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
-#ifdef DEBUG_ON
-		printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-#endif
+		#ifdef DEBUG_ON
+			printf("'editWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		#endif
 		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? (vectorSize(pVector) - 1) : 0));
 	}
 	String wordToEdit = 0;
@@ -229,10 +229,8 @@ void editWord(int index, Vector *pVector){
 	convertToSweString(newWord);
 	FreeBlock(newWordRaw);
 	// Error: If 'newWord' exist in the vector
-	for (int i = 0; i < vectorSize(pVector); i++){
-		if (getPosForWord(newWord, pVector) != -1){
-			userError(alreadyExist, newWord);
-		}
+	if (getPosForWord(newWord, pVector) != -1){
+		userError(alreadyExist, newWord);
 	}
 	userSuccess(wordEdit, wordToEdit, newWord);
 	vectorRemove(pVector, index);

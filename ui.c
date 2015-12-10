@@ -10,6 +10,7 @@
 #include "simpio.h"
 #include "strlib.h"
 
+
 int commandSelection(User *pUserInput, Vector *pContainer){
 
 	Command command = userGetCom(pUserInput);
@@ -130,6 +131,23 @@ int readCommand(String command){
 	return 0;
 }
 
+Bool checkSaveChanges(User *pUserInput){
+	if (userGetMod(pUserInput)){
+		jmp_buf envSaveChanges;
+		userSetEnv(setjmp(envSaveChanges), &envSaveChanges);
+		if (userGetNoError()){
+			userError(unsavedChanges, "exit");
+			//getInput(pUserInput);
+			if (userGetCom(pUserInput) == exitProg){
+				return TRUE;
+			}
+		}
+		userSuccess(continueProg);
+		return FALSE;
+	}
+	return TRUE;
+}
+
 // TODO: Use not yet made function to format 'input1', 'input2'
 void getInput(User *pUserInput){
 	printf("\n\n%c", '>');
@@ -177,21 +195,4 @@ void getInput(User *pUserInput){
 	FreeBlock(command);
 	FreeBlock(input1);
 	FreeBlock(input2);
-}
-
-Bool checkSaveChanges(User *pUserInput, Command com){
-	if (userGetMod(pUserInput)){
-		jmp_buf envSaveChanges;
-		userSetEnv(setjmp(envSaveChanges), &envSaveChanges);
-		if (userGetNoError()){
-			userError(unsavedChanges, "exit");
-			getInput(pUserInput);
-			if (userGetCom(pUserInput) == exitProg){
-				return TRUE;
-			}
-		}
-		userSuccess(continueProg);
-		return FALSE;
-	}
-	return TRUE;
 }

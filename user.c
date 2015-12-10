@@ -33,8 +33,8 @@ Vector* userGetInput(User *pUserInput){
 	return &pUserInput->input;
 }
 void userSetFilename(String filename, User *pUserInput){
-	String str = GetBlock(StringLength(filename) + 1);
-	memcpy(str, filename, (StringLength(filename) + 1));
+	String str;
+	str = CopyString(filename);
 	if (!stringIsEmpty(pUserInput->globals.filename)){
 		FreeBlock(pUserInput->globals.filename);
 	}

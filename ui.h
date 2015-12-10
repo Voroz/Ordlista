@@ -6,7 +6,7 @@
 
 #define MAX_WORD_LENGTH 100
 
-typedef enum commands{
+typedef enum{
 	help = 1,
 	add,
 	edit,
@@ -20,13 +20,13 @@ typedef enum commands{
 } Command;
 
 
-//
-//int commandSelection(User *pUserInput, Vector *pContainer);
-//
-//int readCommand(String command);
-//
-//void getInput(User *pUserInput);
-//
-//Bool checkSaveChanges(User *pUserInput, Command com);
+int commandSelection(User, Vector);
+
+int readCommand(String);
+
+Bool checkSaveChanges(User);
+
+void getInput(User);
+
 
 #endif
