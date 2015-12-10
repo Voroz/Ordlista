@@ -5,7 +5,6 @@ typedef struct{
 	int size;		// Slots used so far
 	int capacity;	// Total available slots
 	void **data;	// Array of data we're storing
-	int changes;	// Keeps track of user changes to the vector
 } Vector;
 
 void vectorInit(Vector *pVector);

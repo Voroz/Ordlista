@@ -1,5 +1,7 @@
 #include <stdlib.h>
+
 #include "vector.h"
+
 #define VECTOR_INITIAL_CAPACITY 10
 
 void vectorInit(Vector *pVector){

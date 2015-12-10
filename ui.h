@@ -20,13 +20,13 @@ typedef enum{
 } Command;
 
 
-int commandSelection(User, Vector);
-
 int readCommand(String);
+
+void getInput(User);
 
 Bool checkSaveChanges(User);
 
-void getInput(User);
+int commandSelection(User, Vector);
 
 
 #endif
