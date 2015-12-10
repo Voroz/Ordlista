@@ -10,6 +10,23 @@
 #include "simpio.h"
 #include "strlib.h"
 
+Bool checkSaveChanges(User *pUserInput, Command com){
+	if (userGetMod(pUserInput)){
+		jmp_buf envSaveChanges;
+		userSetEnv(setjmp(envSaveChanges), &envSaveChanges);
+		if (userGetNoError()){
+			userError(unsavedChanges, "exit");
+			getInput(pUserInput);
+			if (userGetCom(pUserInput) == exitProg){
+				return TRUE;
+			}
+		}
+		userSuccess(continueProg);
+		return FALSE;
+	}
+	return TRUE;
+}
+
 int commandSelection(User *pUserInput, Vector *pContainer){
 
 	Command command = userGetCom(pUserInput);
@@ -177,21 +194,4 @@ void getInput(User *pUserInput){
 	FreeBlock(command);
 	FreeBlock(input1);
 	FreeBlock(input2);
-}
-
-Bool checkSaveChanges(User *pUserInput, Command com){
-	if (userGetMod(pUserInput)){
-		jmp_buf envSaveChanges;
-		userSetEnv(setjmp(envSaveChanges), &envSaveChanges);
-		if (userGetNoError()){
-			userError(unsavedChanges, "exit");
-			getInput(pUserInput);
-			if (userGetCom(pUserInput) == exitProg){
-				return TRUE;
-			}
-		}
-		userSuccess(continueProg);
-		return FALSE;
-	}
-	return TRUE;
 }
