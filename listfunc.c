@@ -164,7 +164,6 @@ void deleteWord(int index, Vector *pVector){
 	vectorRemove(pVector, index);
 }
 
-// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
 void addWord(String word, int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index > vectorSize(pVector)){
@@ -212,8 +211,7 @@ void sortVector(Vector *pVector){
 	}
 }
 
-// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
-// TODO: First char upper
+// TODO: Formsta input with formatFunction not yet done
 void editWord(int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
@@ -227,6 +225,8 @@ void editWord(int index, Vector *pVector){
 	printf("Enter word to replace %s: ", (String)vectorGet(pVector, index));
 	String newWordRaw = GetLine();
 	String newWord = ConvertToLowerCase(newWordRaw);
+	newWord[0] = toupper(newWord[0]);
+	convertToSweString(newWord);
 	FreeBlock(newWordRaw);
 	// Error: If 'newWord' exist in the vector
 	for (int i = 0; i < vectorSize(pVector); i++){

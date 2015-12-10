@@ -66,7 +66,7 @@ Bool stringIsNumber(String s){
 // Check if every character is a letter
 Bool stringIsAlpha(String s){
 	while (*s){
-		if (!(*s >= 'A' && *s <= 'Z') && !(*s >= 'a' && *s <= 'z') && !(*s >= 'ä' && *s <= 'ö'))
+		if (!(*s >= 'A' && *s <= 'Z') && !(*s >= 'a' && *s <= 'z') && !(*s >= 'ä' && *s <= 'ö') && !(*s >= 'Ä' && *s <= 'Ö'))
 			return FALSE;
 		s++;
 	}

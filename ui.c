@@ -15,7 +15,7 @@ int commandSelection(User *pUserInput, Vector *pContainer){
 	Command command = userGetCom(pUserInput);
 	Bool inputIsDigit = userGetInType(pUserInput);
 	void **input;
-	int userWantsToQuit, userWantsToLoad;
+	int userWantsToQuit;
 
 	if (inputIsDigit){
 		input = (int*)vectorGet(userGetInput(pUserInput), 0);
@@ -152,7 +152,7 @@ void getInput(User *pUserInput){
 
 	if (numberOfInputs > 1){
 		convertToSweString(input1);
-		if (stringIsNumber(input1) && com == deelete || com == edit){
+		if (stringIsNumber(input1) && (com == deelete || com == edit)){
 			userSetInType(digit);
 			int number = StringToInteger(input1); // Make the string 'input' to an int
 			userAddInput(number, sizeof(int), pUserInput);
