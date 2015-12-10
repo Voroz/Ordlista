@@ -13,7 +13,7 @@
  * The basic definitions provided by genlib.h are:
  *
  *    1.  Declarations for several new "primitive" types
- *        (most importantly bool and String) that are
+ *        (most importantly Bool and String) that are
  *        used throughout the other libraries and
  *        applications as fundamental types.
  *
@@ -32,7 +32,7 @@
 /* Section 1 -- Define new "primitive" types */
 
 /*
- * Type: bool
+ * Type: Bool
  * ----------
  * This type has two values, FALSE and TRUE, which are equal to 0
  * and 1, respectively.  Most of the advantage of defining this type
@@ -45,18 +45,18 @@
  */
 
 #ifdef THINK_C
-   typedef int bool;
+   typedef int Bool;
 #else
 #  ifdef TRUE
-#    ifndef bool
-#      define bool int
+#    ifndef Bool
+#      define Bool int
 #    endif
 #  else
-#    ifdef bool
+#    ifdef Bool
 #      define FALSE 0
 #      define TRUE 1
 #    else
-       typedef enum {FALSE, TRUE} bool;
+       typedef enum {FALSE, TRUE} Bool;
 #    endif
 #  endif
 #endif

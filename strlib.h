@@ -129,7 +129,7 @@ String CopyString(String s);
  * lowercase characters are considered to be different.
  */
 
-bool StringEqual(String s1, String s2);
+Bool StringEqual(String s1, String s2);
 
 /*
  * Function: StringCompare

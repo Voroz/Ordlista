@@ -68,6 +68,6 @@ double RandomReal(double low, double high);
  * RandomChance(.30) returns TRUE 30 percent of the time.
  */
 
-bool RandomChance(double p);
+Bool RandomChance(double p);
 
 #endif

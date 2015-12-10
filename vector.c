@@ -5,12 +5,10 @@
 void vectorInit(Vector *pVector){
 	// Initialize size and capacity
 	pVector->size = 0;
-	pVector->changes = 0;
 	pVector->capacity = VECTOR_INITIAL_CAPACITY;
 
 	// Allocate memory for vector->data
 	pVector->data = GetBlock(sizeof(void*)* pVector->capacity);
-	return;
 }
 
 int vectorSize(Vector *pVector){
@@ -25,7 +23,6 @@ static void** vectorCopyValue(void* *value, int sizeOfElem){
 
 static void vectorFreeValue(void* value){
 	free(value);
-	return;
 }
 
 static void vectorDoubleCapacityIfFull(Vector *pVector){
@@ -39,7 +36,6 @@ static void vectorDoubleCapacityIfFull(Vector *pVector){
 			pVector->capacity *= 2;
 		}
 	}
-	return;
 }
 
 static void vectorHalfCapacityIfNotUsed(Vector *pVector){
@@ -53,7 +49,6 @@ static void vectorHalfCapacityIfNotUsed(Vector *pVector){
 			pVector->capacity /= 2;
 		}
 	}
-	return;
 }
 
 void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
@@ -62,8 +57,6 @@ void vectorAppend(Vector *pVector, void* *value, int sizeOfElem){
 
 	// Append the value and increment vector->size
 	pVector->data[pVector->size++] = vectorCopyValue(value, sizeOfElem);
-	pVector->changes++;
-	return;
 }
 
 void vectorSet(Vector *pVector, int index, void* *value){
@@ -72,10 +65,10 @@ void vectorSet(Vector *pVector, int index, void* *value){
 			printf("'vectorSet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
-	// Set the value at the desired index
-	pVector->data[index] = value;
-	pVector->changes++;
-	return;
+	else{
+		// Set the value at the desired index
+		pVector->data[index] = value;
+	}
 }
 
 void* vectorGet(Vector *pVector, int index){
@@ -83,8 +76,11 @@ void* vectorGet(Vector *pVector, int index){
 		#ifdef DEBUG_ON
 			printf("'vectorGet' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
+		return NULL; //##########// TODO: Testa!
 	}
-	return pVector->data[index];
+	else{
+		return pVector->data[index];
+	}
 }
 
 //
@@ -97,21 +93,21 @@ void vectorInsert(Vector *pVector, int index, void* *value, int sizeOfElem){
 			printf("'vectorInsert' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
-	// Make the vector one element larger to make room for the new value
-	pVector->size++;
-	vectorDoubleCapacityIfFull(pVector);
+	else{
+		// Make the vector one element larger to make room for the new value
+		pVector->size++;
+		vectorDoubleCapacityIfFull(pVector);
 
-	// Move all values whos index is larger than 'index' one higher (element 5 becomes 4, 4 becomes 3, and so on)
-	for (int i = (pVector->size - 1); i > index; i--){
-		vectorSet(pVector, i, pVector->data[i - 1]);
+		// Move all values whos index is larger than 'index' one higher (element 5 becomes 4, 4 becomes 3, and so on)
+		for (int i = (pVector->size - 1); i > index; i--){
+			vectorSet(pVector, i, pVector->data[i - 1]);
+		}
+		// Save the value at a new adress
+		void* ptr = vectorCopyValue(value, sizeOfElem);
+
+		// Save the new adress in the vector
+		vectorSet(pVector, index, ptr);
 	}
-	// Save the value at a new adress
-	void* ptr = vectorCopyValue(value, sizeOfElem);
-
-	// Save the new adress in the vector
-	vectorSet(pVector, index, ptr);
-	pVector->changes++;
-	return;
 }
 
 void vectorRemove(Vector *pVector, int index){
@@ -121,20 +117,20 @@ void vectorRemove(Vector *pVector, int index){
 			printf("'vectorRemove' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
 		#endif
 	}
-	// Check usage and halves vector if usage is <= 50%
-	vectorHalfCapacityIfNotUsed(pVector);
+	else{
+		// Check usage and halves vector if usage is <= 50%
+		vectorHalfCapacityIfNotUsed(pVector);
 
-	// Remove value att index position
-	vectorFreeValue(pVector->data[index]);
-	// Move all values whos index is larger than 'index' one lower (element 4 becomes 5, 5 becomes 6, and so on)
-	for (int i = index; i < (pVector->size - 1); i++){
-		vectorSet(pVector, i, pVector->data[i + 1]);
+		// Remove value att index position
+		vectorFreeValue(pVector->data[index]);
+		// Move all values whos index is larger than 'index' one lower (element 4 becomes 5, 5 becomes 6, and so on)
+		for (int i = index; i < (pVector->size - 1); i++){
+			vectorSet(pVector, i, pVector->data[i + 1]);
+		}
+		// Decrement vector->size and set last value to NULL
+		vectorSet(pVector, (pVector->size - 1), NULL);
+		pVector->size--;
 	}
-	// Decrement vector->size and set last value to NULL
-	vectorSet(pVector, (pVector->size - 1), NULL);
-	pVector->size--;
-	pVector->changes++;
-	return;
 }
 
 void vectorFree(Vector *pVector){
@@ -142,12 +138,9 @@ void vectorFree(Vector *pVector){
 		vectorFreeValue(pVector->data[i]);
 	}
 	free(pVector->data);
-	return;
 }
 
 void vectorClear(Vector *pVector){
 	vectorFree(pVector);
 	vectorInit(pVector);
-	pVector->changes++;
-	return;
 }

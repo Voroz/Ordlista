@@ -72,7 +72,7 @@ double RandomReal(double low, double high)
  * between 0 and 100, which it then compares to p.
  */
 
-bool RandomChance(double p)
+Bool RandomChance(double p)
 {
     return (RandomReal(0, 1) < p);
 }

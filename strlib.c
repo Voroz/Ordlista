@@ -113,7 +113,7 @@ String CopyString(String s)
 
 /* Section 2 -- String comparison functions */
 
-bool StringEqual(String s1, String s2)
+Bool StringEqual(String s1, String s2)
 {
     if (s1 == NULL || s2 == NULL) {
         Error("NULL String passed to StringEqual");

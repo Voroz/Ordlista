@@ -1,3 +1,6 @@
+#ifndef _vector_h
+#define _vector_h
+
 typedef struct{
 	int size;		// Slots used so far
 	int capacity;	// Total available slots
@@ -31,3 +34,5 @@ void vectorRemove(Vector *pVector, int index);
 void vectorFree(Vector *pVector);
 
 void vectorClear(Vector *pVector);
+
+#endif
