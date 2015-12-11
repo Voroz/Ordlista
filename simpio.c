@@ -8,7 +8,7 @@
  */
 
 #include <stdio.h>
-#include <String.h>
+#include <string.h>
 
 #include "genlib.h"
 #include "strlib.h"

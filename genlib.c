@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <stddef.h>
-#include <String.h>
+#include <string.h>
 #include <stdarg.h>
 
 #include "genlib.h"

@@ -19,7 +19,7 @@
  */
 
 #include <stdio.h>
-#include <String.h>
+#include <string.h>
 #include <ctype.h>
 
 #include "genlib.h"

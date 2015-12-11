@@ -1,5 +1,7 @@
 #include <stdlib.h>
+#include <string.h>
 
+#include "genlib.h"
 #include "vector.h"
 
 #define VECTOR_INITIAL_CAPACITY 10
