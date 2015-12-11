@@ -26,7 +26,7 @@ int main(){
 		printf("error while setting locale\n");
 	}
 
-	// Create vector to cointain all the words
+	// Create vector to contain all the words
 	Vector container;
 	vectorInit(&container);
 	// Create new user to handle input
