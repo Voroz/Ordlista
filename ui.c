@@ -97,8 +97,8 @@ void getInput(User *pUserInput){
 }
 
 Bool checkSaveChanges(User *pUserInput, Command com){
-	if (userGetMod(pUserInput)){
-		jmp_buf envSaveChanges;
+	if (userGetMod(pUserInput)){ // If their is any changes
+		jmp_buf envSaveChanges; // Set return point if an error occurs
 		userSetEnv(setjmp(envSaveChanges), &envSaveChanges);
 		if (userGetNoError()){
 			userError(unsavedChanges, "exit");

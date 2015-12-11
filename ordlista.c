@@ -15,30 +15,34 @@
 #include "vector.h"
 #include "messer.h"
 
-int main()
-{
+int main(){
+	// Set console size and buffer
 	system("MODE CON: COLS=113 LINES=32");
 	COORD buffer = { 113, 1000 };
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), buffer);
 
+	// Set locale settings to what is selected in the environment
 	if (!setlocale(LC_ALL, "")){
 		printf("error while setting locale\n");
 	}
 
+	// Create vector to cointain all the words
 	Vector container;
 	vectorInit(&container);
+	// Create new user to handle input
 	User userInput;
 	userNewUser(&userInput);
 
 	printf("WordMagic ver 1.0\nTo get started, type help.");
 
-	int check = 1;
-	while (check){
+	int app = 1;
+	while (app){
+		// Set return point if an error occurs
 		jmp_buf envMain;
 		userSetEnv(setjmp(envMain), &envMain);
 		if (userGetNoError()){
-			getInput(&userInput);
-			check = commandSelection(&userInput, &container);
+			getInput(&userInput); // Read input from user
+			app = commandSelection(&userInput, &container); // Execute user command
 		}
 	}
 	return 0;
