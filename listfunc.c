@@ -15,7 +15,7 @@
 
 #define MAX_WORD_LENGTH 100
 
-// Load file to vector
+
 void loadWordsFromFile(String filename, Vector *pVector){
 	String word;
 	setExtension("txt");
@@ -34,7 +34,6 @@ void loadWordsFromFile(String filename, Vector *pVector){
 	userSuccess(loadFile, filename);
 }
 
-// Save vector to file
 void saveWordsToFile(String filename, Vector *pVector){
 	if (vectorSize(pVector) <= 0){
 		#ifdef DEBUG_ON
@@ -52,12 +51,10 @@ void saveWordsToFile(String filename, Vector *pVector){
 	userSuccess(saveFile, filename);
 }
 
-// Print one word to the screen with its position
 void printToScreen(String word, int position){
 	printf("\n%d\t%s", position, word);
 }
 
-// Print words in 'pVector' to the screen, starting at 'startindex' and prints 'numberOfWords'
 void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	#ifdef DEBUG_ON
 		// Check if out of bounds
@@ -78,7 +75,6 @@ void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	}
 }
 
-// Find the postition for 'word' in lexigraphical in 'pVector' order and return position
 int findPosForNewWord(String word, Vector *pVector){
 	if (stringIsEmpty(word)){
 		#ifdef DEBUG_ON
@@ -105,7 +101,6 @@ int findPosForNewWord(String word, Vector *pVector){
 	return i;
 }
 
-// Find 'word' and return word position in 'pVector'
 int getPosForWord(String word, Vector *pVector){
 	if (stringIsEmpty(word)){
 		#ifdef DEBUG_ON
@@ -122,7 +117,6 @@ int getPosForWord(String word, Vector *pVector){
 	return -1;
 }
 
-// Find words matching the 'searchTerm' and return a vector containing matching words
 Vector searchForWords(String searchTerm, Vector *pVector){
 	Vector resultVector;
 	vectorInit(&resultVector);
@@ -140,7 +134,6 @@ Vector searchForWords(String searchTerm, Vector *pVector){
 	return resultVector;
 }
 
-// Find words matching the 'searchTerm' and prints them to the screen
 void searchVector(String searchTerm, Vector *pVector){
 	Vector wordSearch = searchForWords(searchTerm, pVector);
 
@@ -186,7 +179,7 @@ void addWord(String word, int index, Vector *pVector){
 		userError(nullWord);
 	}
 	// Error: 'word' does already exist in vector
-	if (index > 0 && stringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
+	if (index > 0 && StringEqual(word, vectorGet(pVector, index - 1))){
 		userError(alreadyExist, word);
 	}
 	// If we're adding 'word' last in vector
@@ -198,20 +191,6 @@ void addWord(String word, int index, Vector *pVector){
 	else{
 		vectorInsert(pVector, index, word, (StringLength(word) + 1));
 		userSuccess(wordAdded, word);
-	}
-}
-
-void sortWordVector(Vector *pVector){
-	String temp;
-	for (int i = 0; i < vectorSize(pVector); i++){
-		for (int j = 0; j < vectorSize(pVector); j++)
-		{
-			if (findPosForNewWord(vectorGet(pVector, j), pVector) > findPosForNewWord(vectorGet(pVector, i), pVector)){
-				temp = vectorGet(pVector, i);
-				vectorSet(pVector, i, vectorGet(pVector, j));
-				vectorSet(pVector, j, temp);
-			}
-		}
 	}
 }
 

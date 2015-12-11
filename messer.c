@@ -5,7 +5,7 @@
 #include "messer.h"
 
 
-errorSetEnv(jmp_buf *currentEnv){
+void errorSetEnv(jmp_buf *currentEnv){
 	env = currentEnv;
 }
 

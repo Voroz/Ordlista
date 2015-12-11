@@ -13,7 +13,7 @@
 
 #define MAX_INPUT_LENGTH 100
 
-int readCommand(String command){
+Command readCommand(String command){
 	if (StringEqual("help", command)){
 		return help;
 	}
@@ -75,7 +75,6 @@ void getInput(User *pUserInput){
 	}
 	else{
 		for (int inputs = 0; (inputs < (numberOfInputs - 1)); inputs++){
-			// stringFormat(*inpuyArray[inputs]); // Format input to our specified standard format
 			if (stringIsNumber(*inpuyArray[inputs]) && (com == deelete || com == edit)){
 				userSetInType(digit);
 				int number = StringToInteger(*inpuyArray[inputs]); // Make the input string to an int

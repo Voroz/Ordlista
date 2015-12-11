@@ -43,17 +43,6 @@ Bool stringIsEmpty(String s){
 	return (StringLength(s) <= 0);
 }
 
-Bool stringEqualNotCaseSens(String wordA, String wordB){
-	String wordALower = ConvertToLowerCase(wordA);
-	String wordBLower = ConvertToLowerCase(wordB);
-
-	Bool result = StringEqual(wordALower, wordBLower);
-	FreeBlock(wordALower);
-	FreeBlock(wordBLower);
-	return result;
-}
-
-// Ckeck if every character is a digit
 Bool stringIsNumber(String s){
 	if (*s == '-') // 's' could be a negative value
 		s++;
@@ -64,7 +53,6 @@ Bool stringIsNumber(String s){
 	return TRUE;
 }
 
-// Check if every character is a letter
 Bool stringIsAlpha(String s){
 	while (*s){
 		if (!(*s >= 'A' && *s <= 'Z') && !(*s >= 'a' && *s <= 'z') && !(*s >= 'ä' && *s <= 'ö') && !(*s >= 'Ä' && *s <= 'Ö')) // Because couldn't get isAlpha to register åäö, ÅÄÖ
