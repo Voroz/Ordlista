@@ -11,7 +11,7 @@
 * -------------------------------------
 * Returns a command if string matches any of the commands.
 */
-int readCommand(String command);
+Command readCommand(String command);
 
 /*
 * Function: getInput
