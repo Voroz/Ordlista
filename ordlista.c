@@ -13,7 +13,7 @@
 #include "ui.h"
 #include "user.h"
 #include "vector.h"
-#include "errorhand.h"
+#include "messer.h"
 
 int main()
 {
@@ -21,7 +21,7 @@ int main()
 	COORD buffer = { 113, 1000 };
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), buffer);
 
-	if (!setlocale(LC_ALL, "")) {
+	if (!setlocale(LC_ALL, "")){
 		printf("error while setting locale\n");
 	}
 

@@ -16,7 +16,7 @@ void printToScreen(String word, int position);
 void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords);
 
 // Find the postition for word in lexigraphical order and return position
-int findPosForWord(String word, Vector *pVector);
+int findPosForNewWord(String word, Vector *pVector);
 
 // Find word and return word position
 int getPosForWord(String word, Vector *pVector);
@@ -29,12 +29,10 @@ void searchVector(String searchTerm, Vector *pVector);
 
 void deleteWord(int index, Vector *pVector);
 
-// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
 void addWord(String word, int index, Vector *pVector);
 
 void sortVector(Vector *pVector);
 
-// TODO: Accept swedish chars as new word, dosen't work with åäö ÅÄÖ
 void editWord(int index, Vector *pVector);
 
 void printHelpInfo();

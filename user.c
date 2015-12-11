@@ -2,12 +2,11 @@
 #include <stdio.h>
 #include <setjmp.h>
 
-#include "ui.h"
 #include "user.h"
 #include "strlib.h"
 #include "strmanip.h"
 #include "genlib.h"
-#include "errorhand.h"
+#include "messer.h"
 
 void userNewUser(User *pUserInput){
 	Vector input;
@@ -22,16 +21,24 @@ void userSetCom(Command com, User *pUserInput){
 Command userGetCom(User *pUserInput){
 	return pUserInput->command;
 }
+Vector* userGetVector(User *pUserInput){
+	return &pUserInput->input;
+}
 void userAddInput(void* input, int sizeOfElem, User *pUserInput){
-	if (inType){
+	if (inType == digit){
 		vectorAppend(&pUserInput->input, &input, sizeOfElem);
 	}
 	else{
 		vectorAppend(&pUserInput->input, input, sizeOfElem);
 	}
 }
-Vector* userGetInput(User *pUserInput){
-	return &pUserInput->input;
+void* userGetInput(User *pUserInput, int index){
+	if (inType == digit){
+		return (int*)vectorGet(&pUserInput->input, index);
+	}
+	else{
+		return (String)vectorGet(&pUserInput->input, index);
+	}
 }
 void userSetFilename(String filename, User *pUserInput){
 	String str;

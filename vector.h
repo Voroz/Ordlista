@@ -1,7 +1,7 @@
 #ifndef _vector_h
 #define _vector_h
 
-typedef struct{
+typedef struct vector{
 	int size;		// Slots used so far
 	int capacity;	// Total available slots
 	void **data;	// Array of data we're storing

@@ -73,3 +73,25 @@ Bool stringIsAlpha(String s){
 	}
 	return TRUE;
 }
+
+void stringFormat(String s){
+	int chr = 0;
+
+	if (s == NULL) Error("NULL String passed to stringFormat");
+
+	convertToSweString(s);
+
+	while (s[chr]){
+		s[chr] = tolower(s[chr]);
+		chr++;
+	}
+	s[0] = toupper(s[0]);
+}
+
+void compareSwedish(String s){
+	for (int chr = 0; chr < StringLength(s); chr++){ // To get program to sort 'Å' and 'Ä' in correct order according to swedish alphabet
+		if (s[chr] == 'ä' || s[chr] == 'Ä'){
+			s[chr] += 2;
+		}
+	}
+}

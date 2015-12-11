@@ -17,4 +17,8 @@ Bool stringIsNumber(String s);
 // Check if every character is a letter
 Bool stringIsAlpha(String s);
 
+void stringFormat(String s);
+
+void compareSwedish(String s);
+
 #endif

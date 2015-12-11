@@ -5,11 +5,13 @@
 
 #include "ui.h"
 #include "user.h"
-#include "errorhand.h"
+#include "messer.h"
 #include "listfunc.h"
 #include "strmanip.h"
 #include "simpio.h"
 #include "strlib.h"
+
+#define MAX_INPUT_LENGTH 100
 
 int readCommand(String command){
 	if (StringEqual("help", command)){
@@ -45,49 +47,50 @@ int readCommand(String command){
 	return 0;
 }
 
-// TODO: Use not yet made function to format 'input1', 'input2'
 void getInput(User *pUserInput){
 	printf("\n\n%c", '>');
 
 	String	userInputRaw,
-		command = GetBlock(MAX_WORD_LENGTH),
-		input1 = GetBlock(MAX_WORD_LENGTH),
-		input2 = GetBlock(MAX_WORD_LENGTH);
+			command = GetBlock(MAX_INPUT_LENGTH),
+			input1 = GetBlock(MAX_INPUT_LENGTH),
+			input2 = GetBlock(MAX_INPUT_LENGTH);
+
+	int *inpuyArray[2] = { &input1, &input2 };
+	Command com;
 
 	userInputRaw = GetLine(); // Get input string
 
-	if (StringLength(userInputRaw) > MAX_WORD_LENGTH){ // Make sure input is not to long (arbitrary limit)
+	if (StringLength(userInputRaw) > MAX_INPUT_LENGTH){ // Make sure input is not to long
 		userError(toLongInput);
 	}
-	int numberOfInputs = sscanf(userInputRaw, "%s %s %s", command, input1, input2); // Format input string, get amount of inputs
+	int numberOfInputs = sscanf(userInputRaw, "%s %s %s", command, *inpuyArray[0], *inpuyArray[1]); // Format input string, get amount of inputs
 
-	vectorClear(userGetInput(pUserInput));
-	Command com = readCommand(command);
+	vectorClear(userGetVector(pUserInput)); // Clear vector of old input
+	com = readCommand(command);
 	userSetCom(com, pUserInput);
 
-	if (numberOfInputs > 1){
-		convertToSweString(input1);
-		if (stringIsNumber(input1) && (com == deelete || com == edit)){
-			userSetInType(digit);
-			int number = StringToInteger(input1); // Make the string 'input' to an int
-			userAddInput(number, sizeof(int), pUserInput);
-		}
-		else{
-			userSetInType(string);
-			userAddInput(input1, (StringLength(input1) + 1), pUserInput);
-			if (numberOfInputs > 2){
-				convertToSweString(input2);
-				userAddInput(input2, (StringLength(input2) + 1), pUserInput);
-			}
-		}
-		if (com == load || com == save){ // Save filename when user loads or save
-			userSetFilename(input1, pUserInput);
-		}
+	if (numberOfInputs == 1){
+		userSetInType(string);
+		userAddInput("", 1, pUserInput);
 	}
 	else{
-		userSetInType(string);
-		userAddInput("", 1, pUserInput); // If no input set 'input1' to empty string to simplify problems down the line
+		for (int inputs = 0; (inputs < (numberOfInputs - 1)); inputs++){
+			// stringFormat(*inpuyArray[inputs]); // Format input to our specified standard format
+			if (stringIsNumber(*inpuyArray[inputs]) && (com == deelete || com == edit)){
+				userSetInType(digit);
+				int number = StringToInteger(*inpuyArray[inputs]); // Make the input string to an int
+				userAddInput(number, sizeof(int), pUserInput);
+			}
+			else{
+				userSetInType(string);
+				userAddInput(*inpuyArray[inputs], (StringLength(*inpuyArray[inputs]) + 1), pUserInput);
+			}
+			if (com == load || com == save){ // Save filename when user loads or save
+				userSetFilename(*inpuyArray[0], pUserInput); // Always save first input as filename
+			}
+		}
 	}
+	
 	FreeBlock(userInputRaw);
 	FreeBlock(command);
 	FreeBlock(input1);
@@ -115,15 +118,9 @@ int commandSelection(User *pUserInput, Vector *pContainer){
 
 	Command command = userGetCom(pUserInput);
 	Bool inputIsDigit = userGetInType(pUserInput);
-	void **input;
-	int userWantsToQuit;
+	void **input = userGetInput(pUserInput, 0);
 
-	if (inputIsDigit){
-		input = (int*)vectorGet(userGetInput(pUserInput), 0);
-	}
-	else{
-		input = (String)vectorGet(userGetInput(pUserInput), 0);
-	}
+	int userWantsToQuit;
 
 	switch (command){
 
@@ -132,7 +129,7 @@ int commandSelection(User *pUserInput, Vector *pContainer){
 		return 1;
 
 	case (add) :
-		addWord(input, findPosForWord(input, pContainer), pContainer);
+		addWord(input, findPosForNewWord(input, pContainer), pContainer);
 		userSetMod(1, pUserInput);
 		return 1;
 
@@ -165,17 +162,17 @@ int commandSelection(User *pUserInput, Vector *pContainer){
 		return 1;
 
 	case (load) :
-		loadWordsFromFile(input, pContainer);
+		if (stringIsEmpty(input)){ // User always have to specify which file to load
+			userError(noFilename);
+		}
+		else{
+			loadWordsFromFile(userGetFilename(pUserInput), pContainer);
+		}
 		userSetMod(0, pUserInput);
 		return 1;
 
 	case (save) :
-		if (!stringIsEmpty(userGetFilename(pUserInput))){
-			saveWordsToFile(userGetFilename(pUserInput), pContainer); // Save to last active file
-		}
-		else{
-			saveWordsToFile(input, pContainer); // Save to file specified in 'input'
-		}
+		saveWordsToFile(userGetFilename(pUserInput), pContainer);
 		userSetMod(0, pUserInput);
 		return 1;
 

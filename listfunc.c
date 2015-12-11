@@ -6,12 +6,14 @@
 
 #include "genlib.h"
 #include "vector.h"
-#include "errorhand.h"
+#include "messer.h"
 #include "listfunc.h"
 #include "fileio.h"
 #include "strlib.h"
 #include "strmanip.h"
 #include "simpio.h"
+
+#define MAX_WORD_LENGTH 100
 
 // Load file to vector
 void loadWordsFromFile(String filename, Vector *pVector){
@@ -21,7 +23,7 @@ void loadWordsFromFile(String filename, Vector *pVector){
 
 	vectorClear(pVector);
 	// Temporary memory
-	word = GetBlock(100);
+	word = GetBlock(MAX_WORD_LENGTH);
 	// Read word into temporary memory
 	for (int i = 0; fscanf(fileToLoad, "%s\n", word) != EOF; i++){
 		// Append word to vector
@@ -48,7 +50,6 @@ void saveWordsToFile(String filename, Vector *pVector){
 	}
 	closeFile(fileToSave);
 	userSuccess(saveFile, filename);
-	FreeBlock(filename);
 }
 
 // Print one word to the screen with its position
@@ -56,20 +57,19 @@ void printToScreen(String word, int position){
 	printf("\n%d\t%s", position, word);
 }
 
-// Print all words in vector to the screen
+// Print words in 'pVector' to the screen, starting at 'startindex' and prints 'numberOfWords'
 void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
-	// Check if out of bounds
-	if (startIndex < 0 || startIndex >= vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
-		#endif
-	}
-	// Check if function would fetch data out of bounds of vector
-	if ((startIndex + numberOfWords) > vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
-		#endif
-	}
+	#ifdef DEBUG_ON
+		// Check if out of bounds
+		if (startIndex < 0 || startIndex >= vectorSize(pVector)){
+				printf("printWordsInVector: startIndex %d is out of bounds for vector of size %d\n", startIndex, pVector->size);
+		}
+		// Check if function would fetch data out of bounds of vector
+		if ((startIndex + numberOfWords) > vectorSize(pVector)){
+				printf("printWordsInVector: startIndex %d + numberOfWords %d will print data out of bounds for vector of size %d\n", startIndex, numberOfWords, pVector->size);
+		}
+	#endif
+
 	if (vectorSize(pVector) <= 0){
 		userError(emptyList);
 	}
@@ -78,29 +78,34 @@ void printWordsInVector(Vector *pVector, int startIndex, int numberOfWords){
 	}
 }
 
-// Find the postition for word in lexigraphical order and return position
-int findPosForWord(String word, Vector *pVector){
-	int i;
-	word = ConvertToLowerCase(word);
-
-	for (int chr = 0; chr < StringLength(word); chr++){
-		if (word[chr] == 'ä' || word[chr] == 'Ä'){
-			word[chr] += 2;
-		}
+// Find the postition for 'word' in lexigraphical in 'pVector' order and return position
+int findPosForNewWord(String word, Vector *pVector){
+	if (stringIsEmpty(word)){
+		#ifdef DEBUG_ON
+			printf("'getPosForWord' - Word to search for is empty string\n");
+		#endif
+		userError(nullWord, word);
 	}
-	for (i = 0; i < vectorSize(pVector); i++){
-		String wordInVector = ConvertToLowerCase(vectorGet(pVector, i));
+	String compareString = CopyString(word);
+	stringFormat(compareString);
+	compareSwedish(compareString);
 
-		if (StringCompare(word, wordInVector) < 0){
+	int i;
+	for (i = 0; i < vectorSize(pVector); i++){
+		String wordInVector = CopyString(vectorGet(pVector, i));
+		compareSwedish(wordInVector);
+		if (StringCompare(compareString, wordInVector) < 0){
 			FreeBlock(wordInVector);
+			FreeBlock(compareString);
 			return i;
 		}
 		FreeBlock(wordInVector);
 	}
+	FreeBlock(compareString);
 	return i;
 }
 
-// Find word and return word position
+// Find 'word' and return word position in 'pVector'
 int getPosForWord(String word, Vector *pVector){
 	if (stringIsEmpty(word)){
 		#ifdef DEBUG_ON
@@ -108,12 +113,12 @@ int getPosForWord(String word, Vector *pVector){
 		#endif
 		userError(nullWord, word);
 	}
+	stringFormat(word);
 	for (int i = 0; i < vectorSize(pVector); i++){
-		if (stringEqualNotCaseSens(word, vectorGet(pVector, i))){
+		if (StringEqual(word, vectorGet(pVector, i))){
 			return i; // i = position
 		}
 	}
-	//userError(noWordFound, word);
 	return -1;
 }
 
@@ -141,8 +146,7 @@ void searchVector(String searchTerm, Vector *pVector){
 
 	if (vectorSize(&wordSearch) > 0) {
 		for (int i = 0; i < vectorSize(&wordSearch); i++){
-			String wordFound = 0;
-			wordFound = vectorGet(&wordSearch, i);
+			String wordFound = vectorGet(&wordSearch, i);
 			printToScreen(wordFound, getPosForWord(wordFound, pVector));
 		}
 		vectorFree(&wordSearch);
@@ -154,7 +158,7 @@ void searchVector(String searchTerm, Vector *pVector){
 }
 
 void deleteWord(int index, Vector *pVector){
-	// Error: if out of bounds
+	// Error: out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
 		#ifdef DEBUG_ON
 			printf("'deleteWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
@@ -166,12 +170,13 @@ void deleteWord(int index, Vector *pVector){
 }
 
 void addWord(String word, int index, Vector *pVector){
-	// Check if out of bounds
-	if (index < 0 || index > vectorSize(pVector)){
-		#ifdef DEBUG_ON
-			printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
-		#endif
-	}
+	#ifdef DEBUG_ON
+		// Check if out of bounds
+		if (index < 0 || index > vectorSize(pVector)){
+				printf("'addWord' - Index %d is out of bounds for vector of size %d\n", index, pVector->size);
+		}
+	#endif
+	stringFormat(word);
 	// Error: 'word' can not contain symbol or number
 	if (!stringIsAlpha(word)){
 		userError(notAllowedChar, word);
@@ -184,9 +189,7 @@ void addWord(String word, int index, Vector *pVector){
 	if (index > 0 && stringEqualNotCaseSens(word, vectorGet(pVector, index - 1))){
 		userError(alreadyExist, word);
 	}
-
-	word[0] = toupper(word[0]);
-	// If we're adding word last in vector
+	// If we're adding 'word' last in vector
 	if (index == vectorSize(pVector)){
 		vectorAppend(pVector, word, (StringLength(word) + 1));
 		userSuccess(wordAdded, word);
@@ -198,12 +201,12 @@ void addWord(String word, int index, Vector *pVector){
 	}
 }
 
-void sortVector(Vector *pVector){
+void sortWordVector(Vector *pVector){
 	String temp;
 	for (int i = 0; i < vectorSize(pVector); i++){
 		for (int j = 0; j < vectorSize(pVector); j++)
 		{
-			if (findPosForWord(vectorGet(pVector, j), pVector) > findPosForWord(vectorGet(pVector, i), pVector)){
+			if (findPosForNewWord(vectorGet(pVector, j), pVector) > findPosForNewWord(vectorGet(pVector, i), pVector)){
 				temp = vectorGet(pVector, i);
 				vectorSet(pVector, i, vectorGet(pVector, j));
 				vectorSet(pVector, j, temp);
@@ -212,7 +215,6 @@ void sortVector(Vector *pVector){
 	}
 }
 
-// TODO: Formsta input with formatFunction not yet done
 void editWord(int index, Vector *pVector){
 	// Check if out of bounds
 	if (index < 0 || index >= vectorSize(pVector)){
@@ -221,22 +223,20 @@ void editWord(int index, Vector *pVector){
 		#endif
 		userError(outOfBounds, index, (vectorSize(pVector) > 0 ? (vectorSize(pVector) - 1) : 0));
 	}
-	String wordToEdit = 0;
+	String wordToEdit;
 	wordToEdit = vectorGet(pVector, index);
 	printf("Enter word to replace %s: ", (String)vectorGet(pVector, index));
-	String newWordRaw = GetLine();
-	String newWord = ConvertToLowerCase(newWordRaw);
-	newWord[0] = toupper(newWord[0]);
-	convertToSweString(newWord);
-	FreeBlock(newWordRaw);
+
+	String newWord = GetLine();
+	stringFormat(newWord);
 	// Error: If 'newWord' exist in the vector
 	if (getPosForWord(newWord, pVector) != -1){
 		userError(alreadyExist, newWord);
 	}
 	userSuccess(wordEdit, wordToEdit, newWord);
 	vectorRemove(pVector, index);
-	vectorInsert(pVector, findPosForWord(newWord, pVector), newWord, (StringLength(newWord) + 1));
-	FreeBlock(wordToEdit);
+	vectorInsert(pVector, findPosForNewWord(newWord, pVector), newWord, (StringLength(newWord) + 1));
+	FreeBlock(newWord);
 }
 
 void printHelpInfo(){

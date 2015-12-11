@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 #include "genlib.h"
-#include "errorhand.h"
+#include "messer.h"
 #include "fileio.h"
 #include "strmanip.h"
 #include "strlib.h"
@@ -19,8 +19,8 @@ String findExtension(String filename){
 }
 
 void appendFileExtension(String *filename){
-	// Return if there's already an extension
 	String ext = findExtension(*filename);
+	// Do nothing if there's already an extension
 	if (*ext == '.'){
 		#ifdef DEBUG_ON
 			printf("'appendFileExtension' - File already has an extension.\n");
@@ -36,7 +36,7 @@ void appendFileExtension(String *filename){
 
 FILE *openFile(String *filename, String accessMode){
 	FILE *file;
-	if (stringIsEmpty(*filename) /*|| *filename[0] == '.'*/){
+	if (stringIsEmpty(*filename)){
 		userError(noFilename);
 	}
 	String fileCpy = CopyString(*filename);

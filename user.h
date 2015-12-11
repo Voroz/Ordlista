@@ -5,30 +5,42 @@
 #include <setjmp.h>
 
 #include "genlib.h"
-#include "errorhand.h"
+#include "messer.h"
 #include "vector.h"
 
-typedef enum{
+typedef enum command{
+	help = 1,
+	add,
+	edit,
+	deelete,
+	find,
+	print,
+	load,
+	save,
+	clear,
+	exitProg
+} Command;
+
+typedef enum inputType{
 	string,
 	digit
 } InputType;
 
-typedef struct{
+typedef struct global{
 	String filename;
 	Bool modified;
 } GlobalState;
 
-typedef struct{
+typedef struct user{
 	Command command;
 	Vector input;
 	GlobalState globals;
 } User;
 
 
-
 static InputType inType;
-static int error;
 
+static int error;
 
 
 void userNewUser(User *pUserInput);
@@ -37,9 +49,11 @@ void userSetCom(Command com, User *pUserInput);
 
 Command userGetCom(User *pUserInput);
 
+Vector* userGetVector(User *pUserInput);
+
 void userAddInput(void* input, int sizeOfElem, User *pUserInput);
 
-Vector* userGetInput(User *pUserInput);
+void* userGetInput(User *pUserInput, int index);
 
 void userSetFilename(String filename, User *pUserInput);
 
