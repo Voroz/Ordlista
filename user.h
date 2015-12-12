@@ -152,8 +152,8 @@ void userSetMod(int n, User *pUserInput);
 Bool userGetMod(User *pUserInput);
 
 /*
-* Function: userSetMod
-* Usage: userSetMod(n, env);
+* Function: userSetEnv
+* Usage: userSetEnv(n, env);
 * -------------------------------------
 * Sets the static error variable and injects a pointer
 * to the current enviroment to error handling code in "messer.h".

@@ -15,9 +15,13 @@
 #include "vector.h"
 #include "messer.h"
 
+#define WINDOW_WIDTH "113"
+#define WINDOW_HEIGHT "32"
+#define WINDOW_SIZE "MODE CON: COLS="WINDOW_WIDTH" LINES="WINDOW_HEIGHT
+
 int main(){
 	// Set console size and buffer
-	system("MODE CON: COLS=113 LINES=32");
+	system(WINDOW_SIZE);
 	COORD buffer = { 113, 1000 };
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), buffer);
 
