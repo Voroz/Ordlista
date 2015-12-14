@@ -17,11 +17,10 @@
 
 #define WINDOW_WIDTH "113"
 #define WINDOW_HEIGHT "32"
-#define WINDOW_SIZE "MODE CON: COLS="WINDOW_WIDTH" LINES="WINDOW_HEIGHT
 
 int main(){
 	// Set console size and buffer
-	system(WINDOW_SIZE);
+	system("MODE CON: COLS="WINDOW_WIDTH" LINES="WINDOW_HEIGHT);
 	COORD buffer = { 113, 1000 };
 	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), buffer);
 
